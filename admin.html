@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Master Admin | Gestão Blindada</title>
 
-    <meta name="theme-color" content="#020617">
+    <meta name="theme-color" content="#04111f">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icone.png">
 
@@ -79,14 +79,17 @@
         @keyframes slideIn { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .badge { background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; }
     </style>
+    <link rel="stylesheet" href="barcoapp-v3.1.css">
+    <script src="barcoapp-v3.1.js" defer></script>
 </head>
-<body>
+<body class="page-admin">
 
     <div id="custom-alert"><i class="fas fa-check-circle"></i> <span id="alert-msg">Ação realizada!</span></div>
 
     <div id="login-overlay">
         <div class="login-card">
-            <i class="fas fa-user-shield" style="font-size: 3rem; color: var(--primary); margin-bottom: 20px;"></i>
+            <img src="logo.png" alt="BarcoApp" class="admin-login-logo">
+            <div class="version-chip" style="margin-bottom:8px;">Painel seguro • v3.1</div>
             <h2 style="margin-bottom: 10px;">Master Admin</h2>
             <input type="password" id="admin-pass" placeholder="Senha de Acesso">
             <button class="btn btn-primary" onclick="handleLogin()">ENTRAR</button>
@@ -95,7 +98,7 @@
 
     <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
     <div class="sidebar" id="sidebar">
-        <h1><i class="fas fa-ship"></i> ADMIN<span style="color:white">PANEL</span></h1>
+        <h1><img src="logo.png" alt=""> ADMIN<span style="color:var(--primary)">PANEL</span></h1>
         <div class="nav-item active" onclick="showSection('dashboard', this)"><i class="fas fa-chart-pie"></i> Visão Geral</div>
         <div class="nav-item" onclick="showSection('fleet', this)"><i class="fas fa-ship"></i> Frota Base</div>
         <div class="nav-item" onclick="showSection('trips', this)"><i class="fas fa-calendar-alt"></i> Viagens Ativas</div>
@@ -212,6 +215,13 @@
             const db = firebase.database();
             
             let fleetImgBase64 = "";
+            let loginAttempts = 0;
+
+            function escapeHTML(value) {
+                return String(value ?? '').replace(/[&<>'"]/g, char => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+                }[char]));
+            }
 
             // NAVEGAÇÃO
             window.toggleSidebar = function() { document.getElementById('sidebar').classList.toggle('active'); }
@@ -225,12 +235,18 @@
 
             window.handleLogin = function() {
                 if(document.getElementById('admin-pass').value === "barco77") {
+                    loginAttempts = 0;
                     document.getElementById('login-overlay').style.display = 'none';
                     document.getElementById('sidebar').style.display = 'flex';
                     document.getElementById('main-content').style.display = 'block';
                     firebase.auth().signInAnonymously().catch(err => console.error(err));
                     initDashboard();
-                } else alert("Senha errada");
+                } else {
+                    loginAttempts++;
+                    document.getElementById('admin-pass').value = '';
+                    document.getElementById('admin-pass').focus();
+                    alert(loginAttempts >= 3 ? "Senha incorreta. Verifique a senha de acesso antes de tentar novamente." : "Senha incorreta.");
+                }
             }
             window.logout = function() { location.reload(); }
             window.showToast = function(msg) {
@@ -281,7 +297,7 @@
                     const img = b.img || 'icone.png';
                     html += `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.03);margin-bottom:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.05)">
                         <img src="${img}" style="width:50px;height:50px;border-radius:8px;object-fit:cover;background:#000">
-                        <div style="flex:1"><div style="font-weight:700;color:white">${b.name}</div><div style="font-size:0.8rem;color:#94a3b8">${b.tel1}</div></div>
+                        <div style="flex:1"><div style="font-weight:700;color:white">${escapeHTML(b.name || 'Embarcação')}</div><div style="font-size:0.8rem;color:#94a3b8">${escapeHTML(b.tel1 || 'Sem contato')}</div></div>
                         <button class="btn-icon" style="background:rgba(244,63,94,0.2);color:#f43f5e" onclick="deleteFleet('${b.id}')"><i class="fas fa-trash"></i></button>
                     </div>`;
                 });
@@ -296,7 +312,7 @@
                 let html = "";
                 Object.keys(barcos).forEach(day => {
                     if(barcos[day]) Object.entries(barcos[day]).forEach(([k, t]) => {
-                        html += `<tr><td><div style="display:flex;align-items:center;gap:8px"><img src="${t.img}" style="width:30px;height:30px;border-radius:50%;object-fit:cover"> ${t.name}</div></td><td>${day}</td><td>${t.origin}>${t.destiny}</td><td><span style="color:var(--success)">+${t.likes||0}</span></td><td><button class="btn-icon" style="background:rgba(244,63,94,0.2);color:#f43f5e" onclick="deleteTrip('${day}','${k}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                        html += `<tr><td><div style="display:flex;align-items:center;gap:8px"><img src="${t.img || 'icone.png'}" style="width:30px;height:30px;border-radius:50%;object-fit:cover"> ${escapeHTML(t.name || 'Embarcação')}</div></td><td>${escapeHTML(day)}</td><td>${escapeHTML(t.origin || 'Origem')} → ${escapeHTML(t.destiny || 'Destino')}</td><td><span style="color:var(--success)">+${t.likes||0}</span></td><td><button class="btn-icon" style="background:rgba(244,63,94,0.2);color:#f43f5e" onclick="deleteTrip('${day}','${k}')"><i class="fas fa-trash"></i></button></td></tr>`;
                     });
                 });
                 list.innerHTML = html;
@@ -314,13 +330,13 @@
                 Object.entries(users).forEach(([uid, u]) => {
                     let pts = 0;
                     if(barcos) Object.values(barcos).forEach(d => { if(d) Object.values(d).forEach(t => { if(t.registeredBy === u.whatsapp) pts += ((t.likes||0)-(t.dislikes||0)); }) });
-                    scores.push({n: u.nome, p: pts});
-                    htmlList += `<tr><td><b>${u.nome}</b></td><td>${u.whatsapp}</td><td>${pts} Pts</td><td><button class="btn-icon" style="background:rgba(244,63,94,0.2);color:#f43f5e" onclick="deleteUser('${uid}')"><i class="fas fa-user-slash"></i></button></td></tr>`;
+                    scores.push({n: u.nome || 'Usuário', p: pts});
+                    htmlList += `<tr><td><b>${escapeHTML(u.nome || 'Usuário')}</b></td><td>${escapeHTML(u.whatsapp || '')}</td><td>${pts} Pts</td><td><button class="btn-icon" style="background:rgba(244,63,94,0.2);color:#f43f5e" onclick="deleteUser('${uid}')"><i class="fas fa-user-slash"></i></button></td></tr>`;
                 });
                 list.innerHTML = htmlList;
 
                 scores.sort((a,b)=>b.p - a.p);
-                rank.innerHTML = scores.slice(0,5).map((u,i) => `<div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #ffffff10"><span>${i+1}. ${u.n}</span><span style="color:var(--primary);font-weight:800">${u.p}</span></div>`).join('');
+                rank.innerHTML = scores.slice(0,5).map((u,i) => `<div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #ffffff10"><span>${i+1}. ${escapeHTML(u.n)}</span><span style="color:var(--primary);font-weight:800">${u.p}</span></div>`).join('');
             }
 
             function renderReports(reports) {
@@ -329,7 +345,7 @@
                 if(!reports) { list.innerHTML = "<tr><td colspan='4' style='text-align:center;color:gray'>Sem denúncias</td></tr>"; return; }
                 let html = "";
                 Object.entries(reports).forEach(([k,r]) => {
-                    html += `<tr><td>${r.boatName}</td><td>${r.reason}</td><td>${r.reportedBy}</td><td><button class="btn btn-primary" style="padding:5px 10px;font-size:0.7rem" onclick="resolveReport('${k}')">OK</button></td></tr>`;
+                    html += `<tr><td>${escapeHTML(r.boatName || 'Embarcação')}</td><td>${escapeHTML(r.reason || 'Não informado')}</td><td>${escapeHTML(r.reportedBy || '')}</td><td><button class="btn btn-primary" style="padding:5px 10px;font-size:0.7rem" onclick="resolveReport('${k}')">RESOLVER</button></td></tr>`;
                 });
                 list.innerHTML = html;
             }
@@ -337,12 +353,16 @@
             // FUNÇÕES DE AÇÃO
             window.processFleetImage = function(input) {
                 if (input.files && input.files[0]) {
+                    if(input.files[0].size > 6 * 1024 * 1024) {
+                        input.value = '';
+                        return alert("Escolha uma imagem com até 6 MB.");
+                    }
                     const r = new FileReader();
                     r.onload = e => {
                         const img = new Image(); img.src = e.target.result;
                         img.onload = () => {
-                            const c = document.createElement('canvas'); const s = 500/img.width;
-                            c.width = 500; c.height = img.height * s;
+                            const c = document.createElement('canvas'); const s = Math.min(1, 600/Math.max(img.width, img.height));
+                            c.width = Math.max(1, Math.round(img.width*s)); c.height = Math.max(1, Math.round(img.height*s));
                             c.getContext('2d').drawImage(img,0,0,c.width,c.height);
                             fleetImgBase64 = c.toDataURL('image/jpeg', 0.6);
                             const p = document.getElementById('fleet-preview'); p.src=fleetImgBase64; p.style.display='block';
@@ -352,28 +372,32 @@
             }
 
             window.saveFleetBoat = function() {
-                const n = document.getElementById('fleet-name').value;
-                const t1 = document.getElementById('fleet-tel1').value;
-                const t2 = document.getElementById('fleet-tel2').value;
+                const n = document.getElementById('fleet-name').value.trim();
+                const t1 = document.getElementById('fleet-tel1').value.replace(/\D/g,'');
+                const t2 = document.getElementById('fleet-tel2').value.replace(/\D/g,'');
                 if(!n || !t1 || !fleetImgBase64) return alert("Preencha tudo");
+                if(t1.length < 10) return alert("Informe um WhatsApp válido com DDD.");
                 const id = Date.now();
                 db.ref('barcos_cadastrados/'+id).set({id:id, name:n, tel1:t1, tel2:t2, img:fleetImgBase64}).then(()=>{
                     showToast("Barco Salvo!");
                     document.getElementById('fleet-name').value="";
+                    document.getElementById('fleet-tel1').value="";
+                    document.getElementById('fleet-tel2').value="";
                     document.getElementById('fleet-preview').style.display='none';
                     fleetImgBase64="";
-                });
+                }).catch(()=>alert("Não foi possível salvar. Verifique sua conexão."));
             }
 
-            window.deleteFleet = function(id) { if(confirm("Apagar?")) db.ref('barcos_cadastrados/'+id).remove(); }
-            window.deleteTrip = function(d,k) { if(confirm("Apagar?")) db.ref(`barcos/${d}/${k}`).remove(); }
-            window.deleteUser = function(u) { if(confirm("Banir?")) db.ref('usuarios_cadastrados/'+u).remove(); }
-            window.resolveReport = function(k) { if(confirm("Resolver?")) db.ref('denuncias/'+k).remove(); }
+            window.deleteFleet = function(id) { if(confirm("Excluir este barco da frota base?")) db.ref('barcos_cadastrados/'+id).remove().catch(()=>alert("Não foi possível excluir.")); }
+            window.deleteTrip = function(d,k) { if(confirm("Excluir esta viagem publicada?")) db.ref(`barcos/${d}/${k}`).remove().catch(()=>alert("Não foi possível excluir.")); }
+            window.deleteUser = function(u) { if(confirm("Remover este usuário cadastrado?")) db.ref('usuarios_cadastrados/'+u).remove().catch(()=>alert("Não foi possível remover.")); }
+            window.resolveReport = function(k) { if(confirm("Marcar esta denúncia como resolvida?")) db.ref('denuncias/'+k).remove().catch(()=>alert("Não foi possível resolver.")); }
 
             window.setGlobalAlert = function(a) { db.ref('config/alerta').set({text:document.getElementById('alert-text-config').value, active:a}).then(()=>showToast("Atualizado")); }
             window.addBanner = function() { 
                 const u=document.getElementById('banner-url').value, l=document.getElementById('banner-link').value;
-                if(u) db.ref('config/carrossel').push({img:u, link:l}).then(()=>showToast("Banner Add"));
+                if(!u || !/^https?:\/\//i.test(u)) return alert("Informe uma URL de imagem válida, começando com http:// ou https://");
+                db.ref('config/carrossel').push({img:u, link:l}).then(()=>showToast("Banner adicionado")).catch(()=>alert("Não foi possível adicionar o banner."));
             }
             window.delBanner = function(k) { if(confirm("Apagar?")) db.ref('config/carrossel/'+k).remove(); }
             
