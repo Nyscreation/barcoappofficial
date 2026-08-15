@@ -6,7 +6,7 @@
     <title>BarcoApp | Premium</title>
 
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#020617">
+    <meta name="theme-color" content="#04111f">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -142,8 +142,10 @@
         .alert-box { background: #1e293b; padding: 25px; border-radius: 20px; border: 1px solid var(--primary); text-align: center; width: 85%; max-width: 300px; }
         .day-row { padding: 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-weight: 600; color: var(--text-dim); cursor: pointer; }
     </style>
+    <link rel="stylesheet" href="barcoapp-v3.1.css">
+    <script src="barcoapp-v3.1.js" defer></script>
 </head>
-<body>
+<body class="page-app">
 
     <div id="custom-alert" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center;">
         <div class="alert-box">
@@ -159,14 +161,13 @@
     </div>
 
     <section id="screen-welcome" style="height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:30px; text-align:center; overflow-y:auto;">
-        <div style="width:80px; height:80px; background:linear-gradient(135deg, var(--primary), var(--secondary)); border-radius:24px; display:flex; align-items:center; justify-content:center; margin-bottom:20px; box-shadow:0 0 30px rgba(6,182,212,0.3);">
-            <i class="fas fa-ship" style="font-size:2.5rem; color:white;"></i>
-        </div>
+        <img src="logo.png" class="welcome-logo" alt="Logo BarcoApp">
+        <span class="version-chip" style="margin-bottom:12px;"><i class="fas fa-sparkles"></i> Versão 3.1</span>
         <h1 style="font-size:2.5rem; font-weight:800; margin:0; background:var(--gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">BarcoApp</h1>
-        <p style="color:var(--text-dim); margin-bottom:40px;">Sua escala oficial.</p>
-        <div style="width:100%; max-width:320px;">
-            <input type="text" id="user-name" class="input-premium" placeholder="Seu Nome">
-            <input type="tel" id="user-phone" class="input-premium" placeholder="WhatsApp (DDD+Num)">
+        <p class="welcome-subtitle" style="color:var(--text-dim); margin-bottom:24px;">Horários, rotas e contato com embarcações em um só lugar.</p>
+        <div class="welcome-form">
+            <input type="text" id="user-name" class="input-premium" placeholder="Seu nome" autocomplete="name" maxlength="80">
+            <input type="tel" id="user-phone" class="input-premium" placeholder="WhatsApp com DDD" autocomplete="tel" inputmode="numeric" maxlength="15">
             <button class="btn-main" onclick="launchApp()">ENTRAR</button>
         </div>
     </section>
@@ -174,9 +175,9 @@
     <section id="screen-main" style="display:none;" class="main-container">
         
         <div class="top-fixed-area">
-            <div style="padding: 15px 20px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-weight:800; font-size:1.1rem;">Barco<span style="color:var(--primary)">App</span></div>
-                <div style="font-size:0.8rem; color:var(--text-dim);">Olá, <span id="display-user">Visitante</span></div>
+            <div class="app-topbar">
+                <div class="app-brand"><img src="logo.png" alt=""><div><strong>Barco<span style="color:var(--primary)">App</span></strong><small>Escala fluvial</small></div></div>
+                <div class="user-greeting"><i class="fas fa-user-circle"></i> Olá, <strong id="display-user">Visitante</strong></div>
             </div>
 
             <div style="padding:0 20px;">
@@ -194,7 +195,7 @@
         </div>
 
         <div class="vertical-list-area">
-            <h3 style="margin:10px 0 15px 0; font-size:0.85rem; letter-spacing:1px; color:var(--text-dim); font-weight:800; text-transform:uppercase;">Embarcações em Destaque</h3>
+            <div class="section-title-v31"><h3>Embarcações em destaque</h3><span>Escala atualizada</span></div>
             
             <div id="dynamic-showcase-wrapper" class="boats-grid">
                 <div style="padding:20px; color:var(--text-dim); text-align:center; grid-column: 1 / -1;">Carregando escala...</div>
@@ -221,7 +222,7 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="btn-close-modal" onclick="closeModal()" style="position:absolute; top:15px; right:15px; z-index:20; background:rgba(0,0,0,0.5); border:none; width:35px; height:35px; border-radius:50%; color:white; cursor:pointer;"><i class="fas fa-times"></i></button>
             
-            <img id="modal-img" style="width:100%; height:250px; object-fit:cover;">
+            <img id="modal-img" alt="Foto da embarcação" style="width:100%; height:250px; object-fit:cover;">
             
             <div style="padding:25px;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -324,6 +325,8 @@
             <div style="width:40px;"></div>
         </div>
 
+        <p class="register-helper">Preencha os dados principais da saída. As informações aparecerão imediatamente na escala do aplicativo.</p>
+
         <p style="color:var(--text-dim); font-size:0.8rem; margin-bottom:8px; font-weight:700;">1. ESCOLHA A EMBARCAÇÃO</p>
         <select id="boat-selector" class="select-boat" onchange="onSelectBoat()">
             <option value="">Carregando...</option>
@@ -400,7 +403,14 @@
             let selectedBoatData = null; 
             let currentNewBoatImg = "";
             let currentOpenBoat = null; 
+            let carouselInstance = null;
             const diasSemana = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+
+            function escapeHTML(value) {
+                return String(value ?? '').replace(/[&<>'"]/g, char => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+                }[char]));
+            }
 
             // --- UI HELPERS ---
             window.openCustomAlert = function(msg, title = "Sucesso!", icon="check") {
@@ -428,10 +438,10 @@
             window.launchApp = function() {
                 const n = document.getElementById('user-name').value.trim();
                 const p = document.getElementById('user-phone').value.replace(/\D/g,'');
-                if(n.length < 3 || p.length < 8) return openCustomAlert("Digite um nome e WhatsApp válidos", "Atenção", "error");
+                if(n.length < 3 || p.length < 10) return openCustomAlert("Digite um nome e WhatsApp com DDD válidos", "Atenção", "error");
                 currentUser = { name: n, phone: p };
                 localStorage.setItem('barco_user_data', JSON.stringify(currentUser));
-                rtdb.ref('usuarios_cadastrados/' + p).update({ nome: n, whatsapp: p });
+                rtdb.ref('usuarios_cadastrados/' + p).update({ nome: n, whatsapp: p }).catch(err => console.warn('Cadastro será sincronizado depois.', err));
                 startApp();
             }
 
@@ -460,7 +470,7 @@
                         else { el.className = "far fa-star"; el.style.color = "#475569"; }
                     }
                     openCustomAlert(`Avaliado com ${stars} estrelas!`);
-                });
+                }).catch(() => openCustomAlert("Não foi possível salvar a avaliação. Tente novamente.", "Sem conexão", "error"));
             }
 
             window.reportTrip = function() {
@@ -473,7 +483,7 @@
                         reason: "Denúncia App"
                     }).then(() => {
                         openCustomAlert("Denúncia enviada para análise.", "Recebido");
-                    });
+                    }).catch(() => openCustomAlert("Não foi possível enviar agora. Tente novamente.", "Sem conexão", "error"));
                 }
             }
 
@@ -484,11 +494,22 @@
                 rtdb.ref('barcos_cadastrados').once('value', snapshot => {
                     const data = snapshot.val();
                     select.innerHTML = '<option value="">-- Toque para Selecionar --</option>';
-                    select.innerHTML += '<option value="new_entry" style="font-weight:bold; color:#f59e0b;">➕ CADASTRAR NOVO BARCO</option>';
+                    const newOption = document.createElement('option');
+                    newOption.value = 'new_entry';
+                    newOption.textContent = '➕ CADASTRAR NOVO BARCO';
+                    select.appendChild(newOption);
                     if(data) {
                         boatsDB = data;
-                        Object.values(data).forEach(b => { select.innerHTML += `<option value="${b.id}">${b.name}</option>`; });
+                        Object.values(data).sort((a,b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR')).forEach(b => {
+                            const option = document.createElement('option');
+                            option.value = b.id;
+                            option.textContent = b.name || 'Embarcação sem nome';
+                            select.appendChild(option);
+                        });
                     }
+                }).catch(() => {
+                    select.innerHTML = '<option value="">Não foi possível carregar. Tente novamente.</option>';
+                    openCustomAlert("Verifique sua conexão e tente abrir o cadastro novamente.", "Sem conexão", "error");
                 });
             }
 
@@ -510,12 +531,18 @@
 
             window.processNewBoatImage = function(input) {
                 if (input.files && input.files[0]) {
+                    if(input.files[0].size > 6 * 1024 * 1024) {
+                        input.value = '';
+                        return openCustomAlert("Escolha uma foto com até 6 MB.", "Imagem muito grande", "error");
+                    }
                     const reader = new FileReader();
                     reader.onload = e => {
                         const img = new Image(); img.src = e.target.result;
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const scale = 500 / img.width; canvas.width = 500; canvas.height = img.height * scale;
+                            const scale = Math.min(1, 600 / Math.max(img.width, img.height));
+                            canvas.width = Math.max(1, Math.round(img.width * scale));
+                            canvas.height = Math.max(1, Math.round(img.height * scale));
                             canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
                             currentNewBoatImg = canvas.toDataURL('image/jpeg', 0.6); 
                             document.getElementById('new-boat-preview-img').src = currentNewBoatImg;
@@ -530,8 +557,16 @@
             window.publish = function() {
                 const selectVal = document.getElementById('boat-selector').value;
                 const dateI = document.getElementById('in-date').value;
+                const departure = document.getElementById('in-departure').value.trim();
+                const origin = document.getElementById('in-origin').value.trim();
+                const destiny = document.getElementById('in-destiny').value.trim();
+                const time = document.getElementById('in-time').value;
+                const price = document.getElementById('in-price-p').value;
                 if(!selectVal) return openCustomAlert("Selecione um barco", "Erro", "error");
                 if(!dateI) return openCustomAlert("Informe a data", "Erro", "error");
+                if(!departure || !origin || !destiny || !time || !price) return openCustomAlert("Preencha porto, origem, destino, horário e valor da passagem.", "Dados incompletos", "error");
+                const today = new Date(); today.setHours(0,0,0,0);
+                if(new Date(dateI + 'T00:00:00') < today) return openCustomAlert("A data da viagem não pode estar no passado.", "Revise a data", "error");
 
                 firebase.auth().signInAnonymously().then(() => {
                     if(selectVal === 'new_entry') {
@@ -540,21 +575,21 @@
                         if(!n || !t || !currentNewBoatImg) return openCustomAlert("Preencha dados do barco", "Erro", "error");
                         const newId = Date.now();
                         const newBoat = { id: newId, name: n, tel1: t, img: currentNewBoatImg };
-                        rtdb.ref('barcos_cadastrados/' + newId).set(newBoat).then(() => saveTrip(newBoat, dateI));
+                        rtdb.ref('barcos_cadastrados/' + newId).set(newBoat).then(() => saveTrip(newBoat, dateI)).catch(() => openCustomAlert("Não foi possível cadastrar o barco.", "Sem conexão", "error"));
                     } else {
                         if(!selectedBoatData) return openCustomAlert("Erro seleção", "Erro", "error");
                         saveTrip(selectedBoatData, dateI);
                     }
-                });
+                }).catch(() => openCustomAlert("Não foi possível conectar ao serviço.", "Sem conexão", "error"));
             }
 
             function saveTrip(boatData, dateVal) {
                 const trip = {
                     boatId: boatData.id, name: boatData.name, img: boatData.img,
                     tel1: boatData.tel1, tel2: boatData.tel2 || "",
-                    departure: document.getElementById('in-departure').value,
-                    origin: document.getElementById('in-origin').value,
-                    destiny: document.getElementById('in-destiny').value,
+                    departure: document.getElementById('in-departure').value.trim(),
+                    origin: document.getElementById('in-origin').value.trim(),
+                    destiny: document.getElementById('in-destiny').value.trim(),
                     date: dateVal, time: document.getElementById('in-time').value,
                     price_p: document.getElementById('in-price-p').value,
                     price_c: document.getElementById('in-price-c').value,
@@ -568,7 +603,7 @@
                     document.getElementById('boat-selector').value = "";
                     document.getElementById('selected-boat-preview').style.display = 'none';
                     document.getElementById('new-boat-form').style.display = 'none';
-                });
+                }).catch(() => openCustomAlert("A viagem não foi publicada. Verifique sua conexão.", "Erro ao publicar", "error"));
             }
 
             // --- FEEDS & DETAILS (GRID + ORDENAÇÃO) ---
@@ -583,7 +618,7 @@
                     Object.keys(d).forEach(day => {
                         if(d[day]) {
                             Object.keys(d[day]).forEach(k => {
-                                const b = d[day][k]; b.key = k; b.dia = day;
+                                const b = {...d[day][k], key:k, dia:day};
                                 allBoatsLocal.push(b);
                             });
                         }
@@ -592,8 +627,8 @@
                     // 2. Sort Logic (Ordenação por Data)
                     allBoatsLocal.sort((a, b) => {
                         // Cria objetos Date combinando data (YYYY-MM-DD) e hora (HH:MM)
-                        const dateA = new Date(a.date + 'T' + a.time);
-                        const dateB = new Date(b.date + 'T' + b.time);
+                        const dateA = new Date((a.date || '2999-12-31') + 'T' + (a.time || '23:59'));
+                        const dateB = new Date((b.date || '2999-12-31') + 'T' + (b.time || '23:59'));
                         return dateA - dateB; // Crescente (Mais perto primeiro)
                     });
 
@@ -604,14 +639,14 @@
                         div.className = 'grid-boat-card';
                         div.onclick = function() { openDirectDetails(b.dia, b.key); };
                         div.innerHTML = `
-                            <div class="grid-day-tag">${b.dia}</div>
-                            <img src="${b.img}" class="grid-boat-img" loading="lazy">
+                            <div class="grid-day-tag">${escapeHTML(b.dia)}</div>
+                            <img src="${b.img || 'icone.png'}" alt="${escapeHTML(b.name || 'Embarcação')}" class="grid-boat-img" loading="lazy">
                             <div class="grid-boat-info">
-                                <div class="grid-boat-name">${b.name}</div>
+                                <div class="grid-boat-name">${escapeHTML(b.name || 'Embarcação')}</div>
                                 <div class="grid-boat-route">
-                                    <span>${b.origin}</span> <i class="fas fa-arrow-right" style="font-size:0.6rem;"></i> <span>${b.destiny}</span>
+                                    <span>${escapeHTML(b.origin || 'Origem')}</span> <i class="fas fa-arrow-right" style="font-size:0.6rem;"></i> <span>${escapeHTML(b.destiny || 'Destino')}</span>
                                 </div>
-                                <div class="grid-boat-time">${b.time}</div>
+                                <div class="grid-boat-time"><i class="far fa-clock"></i> ${escapeHTML(b.time || '--:--')}</div>
                             </div>
                         `;
                         frag.appendChild(div);
@@ -623,12 +658,12 @@
             window.filterShowcase = function(q) {
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
-                    const t = q.toLowerCase();
+                    const t = q.toLocaleLowerCase('pt-BR').trim();
                     const d = document.getElementById('search-dropdown');
                     if(t.length>0) {
-                        const m = allBoatsLocal.filter(b=>b.name.toLowerCase().includes(t)||b.destiny.toLowerCase().includes(t)).slice(0,5);
+                        const m = allBoatsLocal.filter(b=>String(b.name || '').toLocaleLowerCase('pt-BR').includes(t)||String(b.destiny || '').toLocaleLowerCase('pt-BR').includes(t)||String(b.origin || '').toLocaleLowerCase('pt-BR').includes(t)).slice(0,5);
                         if(m.length>0) {
-                            d.innerHTML = m.map(b=>`<div class="search-item" onclick="selectSearchItem('${b.dia}','${b.key}')"><span>${b.name}</span><span>${b.dia} • ${b.destiny}</span></div>`).join('');
+                            d.innerHTML = m.map(b=>`<div class="search-item" onclick="selectSearchItem('${b.dia}','${b.key}')"><span>${escapeHTML(b.name || 'Embarcação')}</span><span>${escapeHTML(b.dia)} • ${escapeHTML(b.destiny || 'Destino')}</span></div>`).join('');
                             d.style.display='block';
                         } else d.style.display='none';
                     } else d.style.display='none';
@@ -647,18 +682,18 @@
                     currentOpenBoat = b; 
                     currentOpenBoat.key = k;
                     
-                    document.getElementById('modal-img').src = b.img;
-                    document.getElementById('modal-name').innerText = b.name;
+                    document.getElementById('modal-img').src = b.img || 'icone.png';
+                    document.getElementById('modal-name').innerText = b.name || 'Embarcação';
                     document.getElementById('modal-departure-text').innerText = `SAÍDA: ${b.departure||"Porto"}`;
-                    document.getElementById('modal-route').innerHTML = `${b.origin} <i class="fas fa-arrow-right"></i> ${b.destiny}`;
+                    document.getElementById('modal-route').innerHTML = `${escapeHTML(b.origin || 'Origem')} <i class="fas fa-arrow-right"></i> ${escapeHTML(b.destiny || 'Destino')}`;
                     document.getElementById('modal-date').innerText = formatDateBR(b.date);
-                    document.getElementById('modal-time').innerText = b.time;
-                    document.getElementById('modal-price-p').innerText = "R$ "+b.price_p;
-                    document.getElementById('modal-price-c').innerText = "R$ "+b.price_c;
+                    document.getElementById('modal-time').innerText = b.time || '--:--';
+                    document.getElementById('modal-price-p').innerText = b.price_p ? "R$ "+b.price_p : 'Consultar';
+                    document.getElementById('modal-price-c').innerText = b.price_c ? "R$ "+b.price_c : 'Consultar';
                     
                     document.getElementById('btn-share-post').onclick = () => shareBoat(b);
                     document.getElementById('btn-like').onclick = () => registerVote(k, 'likes');
-                    document.getElementById('btn-wa1').onclick = () => window.open(`https://wa.me/55${b.tel1.replace(/\D/g,'')}`);
+                    document.getElementById('btn-wa1').onclick = () => b.tel1 ? window.open(`https://wa.me/55${String(b.tel1).replace(/\D/g,'')}`) : openCustomAlert("Contato não informado.", "Atenção", "error");
                     if(b.tel2) { document.getElementById('btn-wa2').style.display='flex'; document.getElementById('btn-wa2').onclick=()=>window.open(`https://wa.me/55${b.tel2.replace(/\D/g,'')}`); }
                     else document.getElementById('btn-wa2').style.display='none';
 
@@ -704,7 +739,9 @@
                         const act = i.link ? `onclick="window.open('${i.link}','_blank')"` : '';
                         w.innerHTML += `<div class="swiper-slide" ${act}><img src="${i.img}" style="width:100%;height:100%;object-fit:cover" loading="lazy"></div>`;
                     });
-                    new Swiper(".mySwiper", {loop:true, autoplay:{delay:4000}});
+                    if(!w.children.length) w.innerHTML = `<div class="swiper-slide"><div class="fallback-banner"><img src="fundoentrada.png" alt=""><div><strong>Bem-vindo ao BarcoApp</strong><span>Encontre horários, destinos e contatos.</span></div></div></div>`;
+                    if(carouselInstance) carouselInstance.destroy(true, true);
+                    carouselInstance = new Swiper(".mySwiper", {loop:w.children.length > 1, autoplay:w.children.length > 1 ? {delay:4000, disableOnInteraction:false} : false, pagination:{el:'.swiper-pagination', clickable:true}});
                 });
             }
 
@@ -748,10 +785,10 @@
                     const div = document.createElement('div');
                     div.style.cssText = 'background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; margin-bottom:10px; display:flex; gap:10px; align-items:center;';
                     div.innerHTML = `
-                        <img src="${b.img}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
+                        <img src="${b.img || 'icone.png'}" alt="" style="width:50px; height:50px; border-radius:8px; object-fit:cover;">
                         <div>
-                            <div style="font-weight:700; font-size:0.9rem; color:white;">${b.name}</div>
-                            <div style="font-size:0.75rem; color:#94a3b8;">${b.date} • ${b.likes||0} Likes</div>
+                            <div style="font-weight:700; font-size:0.9rem; color:white;">${escapeHTML(b.name || 'Embarcação')}</div>
+                            <div style="font-size:0.75rem; color:#94a3b8;">${escapeHTML(b.date || '')} • ${b.likes||0} Likes</div>
                         </div>
                     `;
                     c.appendChild(div);
@@ -769,13 +806,13 @@
                     f.innerHTML=""; const d=s.val();
                     if(d) Object.keys(d).forEach(k => {
                         const b=d[k];
-                        f.innerHTML += `<div style="background:var(--card-glass);border-radius:18px;border:1px solid var(--border);margin-bottom:15px;display:flex;align-items:center;padding:10px;gap:15px;overflow:hidden;position:relative;" onclick="openDetails('${k}')"><img src="${b.img}" style="width:90px;height:90px;border-radius:12px;object-fit:cover;"><div style="flex:1;"><div style="font-weight:800;color:white;margin-bottom:4px;">${b.name}</div><div style="font-size:0.8rem;color:var(--text-dim);display:flex;align-items:center;gap:5px;"><span>${b.origin}</span> <i class="fas fa-arrow-right" style="font-size:0.7rem;"></i> <span>${b.destiny}</span></div><div style="font-weight:700;color:var(--success);font-size:0.9rem;margin-top:5px;">R$ ${b.price_p}</div></div></div>`;
+                        f.innerHTML += `<div style="background:var(--card-glass);border-radius:18px;border:1px solid var(--border);margin-bottom:15px;display:flex;align-items:center;padding:10px;gap:15px;overflow:hidden;position:relative;" onclick="openDetails('${k}')"><img src="${b.img || 'icone.png'}" alt="" style="width:90px;height:90px;border-radius:12px;object-fit:cover;"><div style="flex:1;"><div style="font-weight:800;color:white;margin-bottom:4px;">${escapeHTML(b.name || 'Embarcação')}</div><div style="font-size:0.8rem;color:var(--text-dim);display:flex;align-items:center;gap:5px;"><span>${escapeHTML(b.origin || 'Origem')}</span> <i class="fas fa-arrow-right" style="font-size:0.7rem;"></i> <span>${escapeHTML(b.destiny || 'Destino')}</span></div><div style="font-weight:700;color:var(--success);font-size:0.9rem;margin-top:5px;">${b.price_p ? 'R$ '+escapeHTML(b.price_p) : 'Consultar'}</div></div></div>`;
                     }); else f.innerHTML="<p style='padding:20px;color:gray'>Sem viagens.</p>";
                 });
             }
 
             window.formatDateBR = function(d) { if(!d)return""; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
-            window.shareApp = function() { window.open("https://wa.me/?text=Baixe o BarcoApp: "+window.location.href); }
+            window.shareApp = function() { window.open("https://wa.me/?text="+encodeURIComponent("Baixe o BarcoApp: "+window.location.href), '_blank'); }
 
             if(currentUser) startApp();
         });
