@@ -1,65 +1,99 @@
-const CACHE_NAME = 'barco-app-v2';
+const CACHE_NAME = 'barco-app-v3-1';
+const APP_SHELL = [
+  './',
+  './index.html',
+  './app.html',
+  './admin.html',
+  './reman.html',
+  './barcoapp-v3.1.css',
+  './barcoapp-v3.1.js',
+  './fundoentrada.png',
+  './logo.png',
+  './icone.png',
+  './manifest.json'
+];
 
-// 1. INSTALAÇÃO - MANTENDO TUDO O QUE VOCÊ JÁ TINHA
-// Adicionamos 'icone.png' e 'app.html' para garantir que o Android libere o botão
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll([
-        './', 
-        './index.html', 
-        './app.html', 
-        './logo.png', 
-        './icone.png', 
-        './manifest.json',
-        './sw.js'
-      ]);
-    })
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
   );
 });
 
-// 2. ESTRATÉGIA DE BUSCA - (Cache primeiro, depois rede)
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
-    })
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
 });
 
-// --- ADIÇÕES DE SEGURANÇA E PWA (MANTIDAS INTEGRALMENTE) ---
+async function networkFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const response = await fetch(request);
+    if (response && response.ok && new URL(request.url).origin === self.location.origin) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    return (await cache.match(request)) ||
+      (await cache.match('./app.html')) ||
+      (await cache.match('./index.html'));
+  }
+}
 
-// 3. Sincronização em Segundo Plano
-self.addEventListener('sync', (event) => {
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+  const network = fetch(request).then(response => {
+    if (response && response.ok) cache.put(request, response.clone());
+    return response;
+  }).catch(() => cached);
+  return cached || network;
+}
+
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  if (request.mode === 'navigate' || request.destination === 'document') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  event.respondWith(staleWhileRevalidate(request));
+});
+
+self.addEventListener('sync', event => {
   if (event.tag === 'sync-barcos' || event.tag === 'sync-updates') {
-    console.log('BarcoApp: Sincronizando dados...');
+    console.log('BarcoApp: sincronização solicitada.');
   }
 });
 
-// 4. Notificações Push
-self.addEventListener('push', (event) => {
+self.addEventListener('push', event => {
   const options = {
     body: event.data ? event.data.text() : 'Nova atualização no BarcoApp',
     icon: 'logo.png',
-    badge: 'logo.png',
+    badge: 'icone.png',
     vibrate: [100, 50, 100],
-    data: { dateOfArrival: Date.now() }
+    data: { dateOfArrival: Date.now(), url: 'app.html' }
   };
-  event.waitUntil(
-    self.registration.showNotification('BarcoApp', options)
-  );
+  event.waitUntil(self.registration.showNotification('BarcoApp', options));
 });
 
-// 5. Sincronização Periódica
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'update-cache' || event.tag === 'get-latest-escada') {
-    console.log('BarcoApp: Atualizando escala em segundo plano');
-  }
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(clients.openWindow(event.notification.data?.url || 'app.html'));
 });
 
-// 6. Suporte para Mensagens (Exigência Windows/Edge)
-self.addEventListener('message', (event) => {
+self.addEventListener('message', event => {
   if (event.data && event.data.type === 'GET_NOTES') {
-    event.source.postMessage({ notes: [] });
+    event.source?.postMessage({ notes: [] });
   }
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
