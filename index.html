@@ -6,7 +6,7 @@
     <title>Instalar BarcoApp</title>
 
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#020617">
+    <meta name="theme-color" content="#04111f">
     
     <link rel="apple-touch-icon" href="icone.png">
 
@@ -86,10 +86,14 @@
             font-size: 0.7rem; color: #64748b;
         }
     </style>
+    <link rel="stylesheet" href="barcoapp-v3.1.css">
+    <script src="barcoapp-v3.1.js" defer></script>
 </head>
-<body>
+<body class="page-install">
 
     <img src="icone.png" alt="BarcoApp Logo" class="app-logo">
+
+    <span class="version-chip"><i class="fas fa-sparkles"></i> Nova versão 3.1</span>
 
     <h1>BarcoApp</h1>
     <p>Acompanhe horários, preços e escalas de embarcações em tempo real.</p>
@@ -108,7 +112,7 @@
 
     <a href="app.html" class="link-web">Acessar Versão Web Agora <i class="fas fa-arrow-right"></i></a>
 
-    <div class="footer">Versão 3.0 • Premium</div>
+    <div class="footer">Versão 3.1 • Premium</div>
 
     <script>
         // REGISTRO DO SERVICE WORKER (Para funcionar offline/instalação)
