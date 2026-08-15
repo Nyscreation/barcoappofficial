@@ -1,4 +1,4 @@
-const CACHE_NAME = 'barco-app-v3-1';
+const CACHE_NAME = 'barco-app-v3-2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const APP_SHELL = [
   './reman.html',
   './barcoapp-v3.1.css',
   './barcoapp-v3.1.js',
+  './barcoapp-v3.2.css',
+  './barcoapp-v3.2.js',
   './fundoentrada.png',
   './logo.png',
   './icone.png',
