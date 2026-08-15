@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Master Admin | Gestão Blindada</title>
+    <title>BarcoApp Admin | Gestão de Embarcações</title>
 
     <meta name="theme-color" content="#04111f">
     <link rel="manifest" href="manifest.json">
@@ -80,7 +80,9 @@
         .badge { background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; }
     </style>
     <link rel="stylesheet" href="barcoapp-v3.1.css">
+    <link rel="stylesheet" href="barcoapp-v3.2.css">
     <script src="barcoapp-v3.1.js" defer></script>
+    <script src="barcoapp-v3.2.js" defer></script>
 </head>
 <body class="page-admin">
 
@@ -89,8 +91,9 @@
     <div id="login-overlay">
         <div class="login-card">
             <img src="logo.png" alt="BarcoApp" class="admin-login-logo">
-            <div class="version-chip" style="margin-bottom:8px;">Painel seguro • v3.1</div>
-            <h2 style="margin-bottom: 10px;">Master Admin</h2>
+            <div class="version-chip" style="margin-bottom:8px;">Gestão profissional • v3.2</div>
+            <h2 style="margin-bottom: 10px;">Painel Administrativo</h2>
+            <p class="admin-login-copy">Gerencie frota, saídas, usuários e comunicação do BarcoApp.</p>
             <input type="password" id="admin-pass" placeholder="Senha de Acesso">
             <button class="btn btn-primary" onclick="handleLogin()">ENTRAR</button>
         </div>
@@ -98,37 +101,61 @@
 
     <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
     <div class="sidebar" id="sidebar">
-        <h1><img src="logo.png" alt=""> ADMIN<span style="color:var(--primary)">PANEL</span></h1>
-        <div class="nav-item active" onclick="showSection('dashboard', this)"><i class="fas fa-chart-pie"></i> Visão Geral</div>
-        <div class="nav-item" onclick="showSection('fleet', this)"><i class="fas fa-ship"></i> Frota Base</div>
-        <div class="nav-item" onclick="showSection('trips', this)"><i class="fas fa-calendar-alt"></i> Viagens Ativas</div>
-        <div class="nav-item" onclick="showSection('reports', this)" style="color: var(--danger);"><i class="fas fa-exclamation-triangle"></i> Denúncias <span id="badge-reports" class="badge" style="display:none">0</span></div>
-        <div class="nav-item" onclick="showSection('users', this)"><i class="fas fa-users"></i> Usuários</div>
-        <div class="nav-item" onclick="showSection('config', this)"><i class="fas fa-cog"></i> Configurações</div>
+        <div class="admin-side-brand"><h1><img src="logo.png" alt=""> BARCO<span style="color:var(--primary)">APP</span></h1><small>Central de gestão</small></div>
+        <div class="nav-item active" data-section="dashboard" onclick="showSection('dashboard', this)"><i class="fas fa-chart-pie"></i> Visão Geral</div>
+        <div class="nav-item" data-section="fleet" onclick="showSection('fleet', this)"><i class="fas fa-ship"></i> Frota Base</div>
+        <div class="nav-item" data-section="trips" onclick="showSection('trips', this)"><i class="fas fa-calendar-alt"></i> Viagens Ativas</div>
+        <div class="nav-item" data-section="reports" onclick="showSection('reports', this)" style="color: var(--danger);"><i class="fas fa-exclamation-triangle"></i> Denúncias <span id="badge-reports" class="badge" style="display:none">0</span></div>
+        <div class="nav-item" data-section="users" onclick="showSection('users', this)"><i class="fas fa-users"></i> Usuários</div>
+        <div class="nav-item" data-section="config" onclick="showSection('config', this)"><i class="fas fa-cog"></i> Configurações</div>
         <div style="margin-top: auto; color: var(--danger);" class="nav-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair</div>
     </div>
 
     <div class="main" id="main-content">
+        <header class="admin-topbar-v32">
+            <div>
+                <span class="admin-eyebrow">CENTRAL DE OPERAÇÕES</span>
+                <h2 id="admin-page-title">Visão geral</h2>
+                <p id="admin-page-subtitle">Acompanhe as informações mais importantes do aplicativo.</p>
+            </div>
+            <div class="admin-top-actions">
+                <span class="admin-live-status"><i></i> Dados em tempo real</span>
+                <button class="btn admin-action-btn" type="button" onclick="syncAllFleetTrips()"><i class="fas fa-sync-alt"></i> Sincronizar contatos</button>
+                <button class="btn admin-action-btn" type="button" onclick="exportBackup()"><i class="fas fa-file-export"></i> Exportar backup</button>
+                <a class="btn admin-action-btn primary" href="app.html" target="_blank"><i class="fas fa-external-link-alt"></i> Abrir aplicativo</a>
+            </div>
+        </header>
         
         <div id="sec-dashboard">
             <div class="stats-row">
-                <div class="stat-card"><small style="color:var(--primary)">Usuários</small><h2 id="st-users">0</h2></div>
-                <div class="stat-card"><small style="color:var(--success)">Barcos Cadastrados</small><h2 id="st-fleet">0</h2></div>
-                <div class="stat-card"><small style="color:var(--warning)">Viagens Hoje</small><h2 id="st-trips">0</h2></div>
-                <div class="stat-card" style="border-color:var(--danger)"><small style="color:var(--danger)">Denúncias</small><h2 id="st-reports">0</h2></div>
+                <div class="stat-card stat-card-v32"><div class="stat-icon cyan"><i class="fas fa-users"></i></div><div><small>Usuários cadastrados</small><h2 id="st-users">0</h2><span>acessos identificados</span></div></div>
+                <div class="stat-card stat-card-v32"><div class="stat-icon green"><i class="fas fa-ship"></i></div><div><small>Frota cadastrada</small><h2 id="st-fleet">0</h2><span>embarcações na base</span></div></div>
+                <div class="stat-card stat-card-v32"><div class="stat-icon gold"><i class="fas fa-route"></i></div><div><small>Próximas saídas</small><h2 id="st-trips">0</h2><span>viagens futuras</span></div></div>
+                <div class="stat-card stat-card-v32 danger"><div class="stat-icon red"><i class="fas fa-flag"></i></div><div><small>Denúncias pendentes</small><h2 id="st-reports">0</h2><span>aguardando análise</span></div></div>
             </div>
-            <div class="panel">
-                <div class="panel-header"><h3><i class="fas fa-trophy" style="color:var(--warning)"></i> Top Ranking de Popularidade</h3></div>
-                <div class="panel-body p-content" id="ranking-list">Carregando...</div>
+            <div class="dashboard-grid-v32">
+                <div class="panel">
+                    <div class="panel-header panel-header-v32"><div><span>AGENDA</span><h3><i class="fas fa-calendar-check"></i> Próximas saídas</h3></div><button class="text-action" onclick="openAdminSection('trips')">Ver todas</button></div>
+                    <div class="panel-body p-content" id="upcoming-list">Carregando...</div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header panel-header-v32"><div><span>QUALIDADE DOS DADOS</span><h3><i class="fas fa-heartbeat"></i> Diagnóstico da operação</h3></div></div>
+                    <div class="panel-body p-content" id="data-health-list">Analisando...</div>
+                </div>
+                <div class="panel ranking-panel-v32">
+                    <div class="panel-header panel-header-v32"><div><span>COMUNIDADE</span><h3><i class="fas fa-trophy"></i> Ranking de colaboradores</h3></div></div>
+                    <div class="panel-body p-content" id="ranking-list">Carregando...</div>
+                </div>
             </div>
         </div>
 
         <div id="sec-fleet" style="display:none;">
             <div class="dashboard-grid">
                 <div class="panel">
-                    <div class="panel-header"><h3><i class="fas fa-plus-circle"></i> Novo Barco (Base de Dados)</h3></div>
+                    <div class="panel-header panel-header-v32"><div><span>CADASTRO CENTRAL</span><h3><i class="fas fa-plus-circle"></i> <span id="fleet-form-title">Nova embarcação</span></h3></div></div>
                     <div class="panel-body p-content">
-                        <p style="color:var(--text-dim); font-size:0.85rem;">Cadastre para aparecer na lista do app.</p>
+                        <div id="fleet-edit-notice" class="edit-notice" style="display:none;"><i class="fas fa-pen"></i><span>Você está editando uma embarcação. Ao salvar, os contatos também serão atualizados nas viagens publicadas.</span></div>
+                        <p style="color:var(--text-dim); font-size:0.85rem;">Mantenha foto e WhatsApp corretos para o contato aparecer no aplicativo.</p>
                         <div class="upload-area" onclick="document.getElementById('fleet-file').click()">
                             <i class="fas fa-camera" style="font-size: 2rem; color: var(--text-dim); margin-bottom: 10px;"></i>
                             <span style="font-size: 0.8rem; color: var(--text-dim);">Toque para foto</span>
@@ -140,12 +167,15 @@
                             <input type="tel" id="fleet-tel1" placeholder="WhatsApp 1">
                             <input type="tel" id="fleet-tel2" placeholder="WhatsApp 2">
                         </div>
-                        <button class="btn btn-primary" onclick="saveFleetBoat()">SALVAR BARCO</button>
+                        <input type="hidden" id="fleet-edit-id">
+                        <button id="fleet-save-button" class="btn btn-primary" onclick="saveFleetBoat()"><i class="fas fa-save"></i> SALVAR EMBARCAÇÃO</button>
+                        <button id="fleet-cancel-edit" class="btn btn-ghost-v32" style="display:none;" onclick="cancelFleetEdit()"><i class="fas fa-times"></i> CANCELAR EDIÇÃO</button>
                     </div>
                 </div>
                 <div class="panel">
-                    <div class="panel-header"><h3>Frota Atual</h3></div>
+                    <div class="panel-header panel-header-v32"><div><span>BASE DE EMBARCAÇÕES</span><h3>Frota atual</h3></div><span id="fleet-count-label" class="count-pill">0 itens</span></div>
                     <div class="panel-body p-content" style="flex:1; display:flex; flex-direction:column;">
+                        <div class="admin-search"><i class="fas fa-search"></i><input type="search" id="fleet-search" placeholder="Buscar embarcação ou contato..." oninput="filterFleet()"></div>
                         <div id="fleet-list" style="flex:1; overflow-y:auto; max-height:600px;"></div>
                     </div>
                 </div>
@@ -154,9 +184,13 @@
 
         <div id="sec-trips" style="display:none;">
             <div class="panel">
-                <div class="panel-header"><h3>Escalas Publicadas</h3></div>
+                <div class="panel-header panel-header-v32"><div><span>OPERAÇÃO</span><h3>Escalas publicadas</h3></div><span id="trips-count-label" class="count-pill">0 saídas</span></div>
+                <div class="admin-table-tools">
+                    <div class="admin-search"><i class="fas fa-search"></i><input type="search" id="trips-search" placeholder="Buscar barco, origem ou destino..." oninput="filterTrips()"></div>
+                    <select id="trips-status" onchange="filterTrips()"><option value="all">Todas as saídas</option><option value="upcoming">Próximas</option><option value="past">Encerradas</option><option value="missing-contact">Sem contato</option></select>
+                </div>
                 <div class="table-responsive">
-                    <table><thead><tr><th>Barco</th><th>Dia</th><th>Rota</th><th>Likes</th><th>Ação</th></tr></thead><tbody id="trips-list"></tbody></table>
+                    <table><thead><tr><th>Embarcação</th><th>Data e hora</th><th>Rota</th><th>Contato</th><th>Engajamento</th><th>Ações</th></tr></thead><tbody id="trips-list"></tbody></table>
                 </div>
             </div>
         </div>
@@ -172,23 +206,24 @@
 
         <div id="sec-users" style="display:none;">
             <div class="panel">
-                <div class="panel-header"><h3>Usuários</h3></div>
+                <div class="panel-header panel-header-v32"><div><span>COMUNIDADE</span><h3>Usuários cadastrados</h3></div><span id="users-count-label" class="count-pill">0 usuários</span></div>
+                <div class="admin-table-tools"><div class="admin-search"><i class="fas fa-search"></i><input type="search" id="users-search" placeholder="Buscar nome ou WhatsApp..." oninput="filterUsers()"></div></div>
                 <div class="table-responsive">
-                    <table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Pts</th><th>Ação</th></tr></thead><tbody id="users-list"></tbody></table>
+                    <table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Colaboração</th><th>Ações</th></tr></thead><tbody id="users-list"></tbody></table>
                 </div>
             </div>
         </div>
 
         <div id="sec-config" style="display:none;">
             <div class="panel">
-                <div class="panel-header"><h3>Alerta Global</h3></div>
+                <div class="panel-header panel-header-v32"><div><span>COMUNICAÇÃO</span><h3>Alerta global</h3></div><span id="alert-status-pill" class="status-pill off">Desligado</span></div>
                 <div class="panel-body p-content">
                     <input type="text" id="alert-text-config" placeholder="Mensagem...">
                     <div style="display:flex; gap:10px;"><button class="btn" style="background:var(--success); color:white; flex:1" onclick="setGlobalAlert(true)">LIGAR</button><button class="btn" style="background:var(--danger); color:white; flex:1" onclick="setGlobalAlert(false)">DESLIGAR</button></div>
                 </div>
             </div>
             <div class="panel">
-                <div class="panel-header"><h3>Banners</h3></div>
+                <div class="panel-header panel-header-v32"><div><span>DESTAQUES DO APLICATIVO</span><h3>Banners promocionais</h3></div></div>
                 <div class="panel-body p-content">
                     <input type="text" id="banner-url" placeholder="URL da Imagem">
                     <input type="text" id="banner-link" placeholder="Link de Destino">
@@ -216,11 +251,58 @@
             
             let fleetImgBase64 = "";
             let loginAttempts = 0;
+            let latestDatabase = {};
+            let adminFleetData = {};
+            let adminTripsData = [];
+            let adminUsersData = [];
 
             function escapeHTML(value) {
                 return String(value ?? '').replace(/[&<>'"]/g, char => ({
                     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
                 }[char]));
+            }
+
+            function normalizePhone(value) { return String(value || '').replace(/\D/g, ''); }
+            function getContacts(item) {
+                const values = [item && item.tel1, item && item.whatsapp, item && item.telefone, item && item.phone, item && item.contato, item && item.tel2, item && item.whatsapp2]
+                    .map(normalizePhone).filter(phone => phone.length >= 10);
+                return [...new Set(values)];
+            }
+            function formatPhone(value) {
+                let phone = normalizePhone(value);
+                if(phone.startsWith('55') && (phone.length === 12 || phone.length === 13)) phone = phone.slice(2);
+                if(phone.length === 11) return `(${phone.slice(0,2)}) ${phone.slice(2,7)}-${phone.slice(7)}`;
+                if(phone.length === 10) return `(${phone.slice(0,2)}) ${phone.slice(2,6)}-${phone.slice(6)}`;
+                return phone || 'Não informado';
+            }
+            function whatsappPhone(value) {
+                const phone = normalizePhone(value);
+                return phone.startsWith('55') && (phone.length === 12 || phone.length === 13) ? phone : (phone ? `55${phone}` : '');
+            }
+            function safeImageSrc(value) {
+                const source = String(value || '');
+                return /^(data:image\/(png|jpe?g|webp);base64,|https?:\/\/|\.\.?\/|[a-z0-9_-]+\.(png|jpe?g|webp)$)/i.test(source) ? source.replace(/"/g, '&quot;') : 'icone.png';
+            }
+            function formatDate(value) {
+                if(!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'Data não informada';
+                const [year, month, day] = value.split('-');
+                return `${day}/${month}/${year}`;
+            }
+            function tripTimestamp(trip) {
+                const value = `${trip.date || '1900-01-01'}T${trip.time || '23:59'}:00`;
+                const timestamp = new Date(value).getTime();
+                return Number.isFinite(timestamp) ? timestamp : 0;
+            }
+            function isUpcomingTrip(trip) {
+                const endOfDay = new Date(`${trip.date || '1900-01-01'}T23:59:59`).getTime();
+                return endOfDay >= Date.now();
+            }
+            function flattenTrips(barcos) {
+                const trips = [];
+                if(barcos) Object.entries(barcos).forEach(([day, entries]) => {
+                    if(entries) Object.entries(entries).forEach(([key, trip]) => trips.push({...trip, day, key}));
+                });
+                return trips;
             }
 
             // NAVEGAÇÃO
@@ -229,8 +311,23 @@
                 document.querySelectorAll('.main > div').forEach(d => d.style.display = 'none');
                 document.getElementById('sec-' + id).style.display = 'block';
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                btn.classList.add('active');
+                if(btn) btn.classList.add('active');
+                const sectionCopy = {
+                    dashboard:['Visão geral','Acompanhe as informações mais importantes do aplicativo.'],
+                    fleet:['Gestão da frota','Cadastre, edite e mantenha os contatos das embarcações atualizados.'],
+                    trips:['Viagens publicadas','Consulte e organize as saídas disponíveis no BarcoApp.'],
+                    reports:['Central de denúncias','Analise informações sinalizadas pelos usuários.'],
+                    users:['Usuários cadastrados','Acompanhe os colaboradores e seus contatos.'],
+                    config:['Configurações','Controle alertas e destaques exibidos no aplicativo.']
+                };
+                const copy = sectionCopy[id] || sectionCopy.dashboard;
+                document.getElementById('admin-page-title').innerText = copy[0];
+                document.getElementById('admin-page-subtitle').innerText = copy[1];
                 if(window.innerWidth <= 768) toggleSidebar();
+            }
+            window.openAdminSection = function(id) {
+                const button = document.querySelector(`.nav-item[data-section="${id}"]`);
+                showSection(id, button);
             }
 
             window.handleLogin = function() {
@@ -259,15 +356,16 @@
             function initDashboard() {
                 db.ref().on('value', snap => {
                     const data = snap.val() || {};
-                    console.log("Status DB:", data); // Debug
+                    latestDatabase = data;
 
-                    // Executa cada renderizador em bloco seguro try-catch
                     try { updateStats(data); } catch(e){ console.error("Erro Stats", e); }
                     try { renderFleet(data.barcos_cadastrados); } catch(e){ console.error("Erro Frota", e); }
                     try { renderTrips(data.barcos); } catch(e){ console.error("Erro Viagens", e); }
                     try { renderUsers(data.usuarios_cadastrados, data.barcos); } catch(e){ console.error("Erro Users", e); }
                     try { renderReports(data.denuncias); } catch(e){ console.error("Erro Denuncias", e); }
                     try { renderConfig(data.config); } catch(e){ console.error("Erro Config", e); }
+                    try { renderUpcoming(data.barcos); } catch(e){ console.error("Erro Agenda", e); }
+                    try { renderDataHealth(data); } catch(e){ console.error("Erro Diagnóstico", e); }
                 });
             }
 
@@ -275,8 +373,7 @@
                 const users = data.usuarios_cadastrados ? Object.keys(data.usuarios_cadastrados).length : 0;
                 const fleet = data.barcos_cadastrados ? Object.keys(data.barcos_cadastrados).length : 0;
                 const reports = data.denuncias ? Object.keys(data.denuncias).length : 0;
-                let trips = 0;
-                if(data.barcos) Object.values(data.barcos).forEach(d => { if(d) Object.values(d).forEach(()=>trips++) });
+                const trips = flattenTrips(data.barcos).filter(isUpcomingTrip).length;
                 
                 document.getElementById('st-users').innerText = users;
                 document.getElementById('st-fleet').innerText = fleet;
@@ -288,55 +385,110 @@
 
             // FUNÇÕES DE RENDERIZAÇÃO (REVISADAS)
             function renderFleet(fleet) {
+                adminFleetData = fleet || {};
+                filterFleet();
+            }
+
+            window.filterFleet = function() {
                 const list = document.getElementById('fleet-list');
-                list.innerHTML = "";
-                if(!fleet) { list.innerHTML = "<div style='text-align:center;color:gray;padding:20px'>Nenhum barco na base.</div>"; return; }
-                
-                let html = "";
-                Object.values(fleet).forEach(b => {
-                    const img = b.img || 'icone.png';
-                    html += `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.03);margin-bottom:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.05)">
-                        <img src="${img}" style="width:50px;height:50px;border-radius:8px;object-fit:cover;background:#000">
-                        <div style="flex:1"><div style="font-weight:700;color:white">${escapeHTML(b.name || 'Embarcação')}</div><div style="font-size:0.8rem;color:#94a3b8">${escapeHTML(b.tel1 || 'Sem contato')}</div></div>
-                        <button class="btn-icon" style="background:rgba(244,63,94,0.2);color:#f43f5e" onclick="deleteFleet('${b.id}')"><i class="fas fa-trash"></i></button>
-                    </div>`;
+                const query = String(document.getElementById('fleet-search')?.value || '').trim().toLocaleLowerCase('pt-BR');
+                const entries = Object.entries(adminFleetData).sort((a,b) => String(a[1].name || '').localeCompare(String(b[1].name || ''), 'pt-BR'));
+                const filtered = entries.filter(([, boat]) => {
+                    const contacts = getContacts(boat).join(' ');
+                    return !query || String(boat.name || '').toLocaleLowerCase('pt-BR').includes(query) || contacts.includes(query.replace(/\D/g,''));
                 });
-                list.innerHTML = html;
+                document.getElementById('fleet-count-label').innerText = `${filtered.length} ${filtered.length === 1 ? 'item' : 'itens'}`;
+
+                if(!filtered.length) {
+                    list.innerHTML = `<div class="admin-empty-state"><i class="fas fa-ship"></i><strong>Nenhuma embarcação encontrada</strong><span>${entries.length ? 'Tente outro termo de busca.' : 'Cadastre a primeira embarcação usando o formulário.'}</span></div>`;
+                    return;
+                }
+
+                list.innerHTML = filtered.map(([key, boat]) => {
+                    const contacts = getContacts(boat);
+                    const id = String(key).replace(/'/g, '');
+                    return `<article class="fleet-card-v32">
+                        <img src="${safeImageSrc(boat.img)}" alt="${escapeHTML(boat.name || 'Embarcação')}">
+                        <div class="fleet-card-copy">
+                            <strong>${escapeHTML(boat.name || 'Embarcação')}</strong>
+                            <span class="${contacts.length ? 'has-contact' : 'missing-contact'}"><i class="fab fa-whatsapp"></i> ${contacts[0] ? escapeHTML(formatPhone(contacts[0])) : 'Contato não informado'}</span>
+                            ${contacts[1] ? `<small>Alternativo: ${escapeHTML(formatPhone(contacts[1]))}</small>` : ''}
+                        </div>
+                        <div class="fleet-card-actions">
+                            ${contacts[0] ? `<button class="btn-icon action-whatsapp" onclick="openFleetWhatsApp('${id}')" title="Abrir WhatsApp"><i class="fab fa-whatsapp"></i></button>` : ''}
+                            <button class="btn-icon action-edit" onclick="editFleet('${id}')" title="Editar embarcação"><i class="fas fa-pen"></i></button>
+                            <button class="btn-icon action-delete" onclick="deleteFleet('${id}')" title="Excluir embarcação"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </article>`;
+                }).join('');
             }
 
             function renderTrips(barcos) {
+                adminTripsData = flattenTrips(barcos).sort((a,b) => tripTimestamp(a) - tripTimestamp(b));
+                filterTrips();
+            }
+
+            window.filterTrips = function() {
                 const list = document.getElementById('trips-list');
-                list.innerHTML = "";
-                if(!barcos) { list.innerHTML = "<tr><td colspan='5' style='text-align:center;color:gray'>Sem viagens</td></tr>"; return; }
-                
-                let html = "";
-                Object.keys(barcos).forEach(day => {
-                    if(barcos[day]) Object.entries(barcos[day]).forEach(([k, t]) => {
-                        html += `<tr><td><div style="display:flex;align-items:center;gap:8px"><img src="${t.img || 'icone.png'}" style="width:30px;height:30px;border-radius:50%;object-fit:cover"> ${escapeHTML(t.name || 'Embarcação')}</div></td><td>${escapeHTML(day)}</td><td>${escapeHTML(t.origin || 'Origem')} → ${escapeHTML(t.destiny || 'Destino')}</td><td><span style="color:var(--success)">+${t.likes||0}</span></td><td><button class="btn-icon" style="background:rgba(244,63,94,0.2);color:#f43f5e" onclick="deleteTrip('${day}','${k}')"><i class="fas fa-trash"></i></button></td></tr>`;
-                    });
+                const query = String(document.getElementById('trips-search')?.value || '').trim().toLocaleLowerCase('pt-BR');
+                const status = document.getElementById('trips-status')?.value || 'all';
+                const filtered = adminTripsData.filter(trip => {
+                    const text = `${trip.name || ''} ${trip.origin || ''} ${trip.destiny || ''} ${trip.departure || ''}`.toLocaleLowerCase('pt-BR');
+                    const upcoming = isUpcomingTrip(trip);
+                    const missingContact = getContacts(trip).length === 0;
+                    const statusMatch = status === 'all' || (status === 'upcoming' && upcoming) || (status === 'past' && !upcoming) || (status === 'missing-contact' && missingContact);
+                    return statusMatch && (!query || text.includes(query));
                 });
-                list.innerHTML = html;
+                document.getElementById('trips-count-label').innerText = `${filtered.length} ${filtered.length === 1 ? 'saída' : 'saídas'}`;
+
+                if(!filtered.length) {
+                    list.innerHTML = '<tr><td colspan="6"><div class="admin-empty-state compact"><i class="fas fa-route"></i><strong>Nenhuma saída encontrada</strong><span>Altere os filtros para consultar outros registros.</span></div></td></tr>';
+                    return;
+                }
+
+                list.innerHTML = filtered.map(trip => {
+                    const contacts = getContacts(trip);
+                    const upcoming = isUpcomingTrip(trip);
+                    const day = String(trip.day).replace(/'/g,'');
+                    const key = String(trip.key).replace(/'/g,'');
+                    return `<tr>
+                        <td><div class="table-boat"><img src="${safeImageSrc(trip.img)}"><div><b>${escapeHTML(trip.name || 'Embarcação')}</b><small class="trip-status ${upcoming ? 'upcoming' : 'past'}">${upcoming ? 'Próxima' : 'Encerrada'}</small></div></div></td>
+                        <td><b>${escapeHTML(formatDate(trip.date))}</b><small class="table-subline">${escapeHTML(trip.day || '')} • ${escapeHTML(trip.time || '--:--')}</small></td>
+                        <td>${escapeHTML(trip.origin || 'Origem')} <i class="fas fa-arrow-right table-route-arrow"></i> ${escapeHTML(trip.destiny || 'Destino')}<small class="table-subline">${escapeHTML(trip.departure || 'Porto não informado')}</small></td>
+                        <td><span class="contact-table ${contacts.length ? 'ok' : 'missing'}"><i class="fab fa-whatsapp"></i> ${contacts[0] ? escapeHTML(formatPhone(contacts[0])) : 'Sem contato'}</span></td>
+                        <td><span class="engagement-pill"><i class="fas fa-thumbs-up"></i> ${Number(trip.likes || 0)}</span></td>
+                        <td><div class="table-actions"><button class="btn-icon action-copy" onclick="copyTripText('${day}','${key}')" title="Copiar informações"><i class="far fa-copy"></i></button><button class="btn-icon action-delete" onclick="deleteTrip('${day}','${key}')" title="Excluir saída"><i class="fas fa-trash"></i></button></div></td>
+                    </tr>`;
+                }).join('');
             }
 
             function renderUsers(users, barcos) {
-                const list = document.getElementById('users-list'); 
                 const rank = document.getElementById('ranking-list');
-                list.innerHTML = ""; rank.innerHTML = "";
-                
-                if(!users) { list.innerHTML = "<tr><td colspan='4' style='text-align:center;color:gray'>Sem usuários</td></tr>"; return; }
-
-                let scores = [];
-                let htmlList = "";
-                Object.entries(users).forEach(([uid, u]) => {
+                adminUsersData = [];
+                Object.entries(users || {}).forEach(([uid, u]) => {
                     let pts = 0;
                     if(barcos) Object.values(barcos).forEach(d => { if(d) Object.values(d).forEach(t => { if(t.registeredBy === u.whatsapp) pts += ((t.likes||0)-(t.dislikes||0)); }) });
-                    scores.push({n: u.nome || 'Usuário', p: pts});
-                    htmlList += `<tr><td><b>${escapeHTML(u.nome || 'Usuário')}</b></td><td>${escapeHTML(u.whatsapp || '')}</td><td>${pts} Pts</td><td><button class="btn-icon" style="background:rgba(244,63,94,0.2);color:#f43f5e" onclick="deleteUser('${uid}')"><i class="fas fa-user-slash"></i></button></td></tr>`;
+                    adminUsersData.push({uid, ...u, points:pts});
                 });
-                list.innerHTML = htmlList;
+                adminUsersData.sort((a,b) => b.points - a.points);
+                filterUsers();
+                rank.innerHTML = adminUsersData.length ? adminUsersData.slice(0,5).map((user,index) => `<div class="ranking-row-v32"><span class="ranking-position pos-${index+1}">${index+1}</span><div><strong>${escapeHTML(user.nome || 'Usuário')}</strong><small>${user.points > 0 ? 'Contribuição reconhecida' : 'Ainda sem pontuação'}</small></div><b>${user.points} pts</b></div>`).join('') : '<div class="admin-empty-state compact"><i class="fas fa-users"></i><strong>Ainda não há usuários</strong></div>';
+            }
 
-                scores.sort((a,b)=>b.p - a.p);
-                rank.innerHTML = scores.slice(0,5).map((u,i) => `<div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #ffffff10"><span>${i+1}. ${escapeHTML(u.n)}</span><span style="color:var(--primary);font-weight:800">${u.p}</span></div>`).join('');
+            window.filterUsers = function() {
+                const list = document.getElementById('users-list');
+                const query = String(document.getElementById('users-search')?.value || '').trim().toLocaleLowerCase('pt-BR');
+                const filtered = adminUsersData.filter(user => !query || String(user.nome || '').toLocaleLowerCase('pt-BR').includes(query) || normalizePhone(user.whatsapp).includes(query.replace(/\D/g,'')));
+                document.getElementById('users-count-label').innerText = `${filtered.length} ${filtered.length === 1 ? 'usuário' : 'usuários'}`;
+                if(!filtered.length) {
+                    list.innerHTML = '<tr><td colspan="4"><div class="admin-empty-state compact"><i class="fas fa-users"></i><strong>Nenhum usuário encontrado</strong></div></td></tr>';
+                    return;
+                }
+                list.innerHTML = filtered.map(user => {
+                    const phone = normalizePhone(user.whatsapp);
+                    const uid = String(user.uid).replace(/'/g,'');
+                    return `<tr><td><div class="user-name-cell"><span>${escapeHTML((user.nome || 'U').charAt(0).toUpperCase())}</span><b>${escapeHTML(user.nome || 'Usuário')}</b></div></td><td>${escapeHTML(formatPhone(phone))}</td><td><span class="points-pill"><i class="fas fa-star"></i> ${user.points} pontos</span></td><td><div class="table-actions">${phone ? `<button class="btn-icon action-whatsapp" onclick="window.open('https://wa.me/${whatsappPhone(phone)}','_blank','noopener')" title="Abrir WhatsApp"><i class="fab fa-whatsapp"></i></button>` : ''}<button class="btn-icon action-delete" onclick="deleteUser('${uid}')" title="Excluir usuário"><i class="fas fa-user-slash"></i></button></div></td></tr>`;
+                }).join('');
             }
 
             function renderReports(reports) {
@@ -350,6 +502,32 @@
                 list.innerHTML = html;
             }
 
+            function renderUpcoming(barcos) {
+                const container = document.getElementById('upcoming-list');
+                const upcoming = flattenTrips(barcos).filter(isUpcomingTrip).sort((a,b) => tripTimestamp(a) - tripTimestamp(b)).slice(0,5);
+                if(!upcoming.length) {
+                    container.innerHTML = '<div class="admin-empty-state compact"><i class="fas fa-calendar-times"></i><strong>Nenhuma próxima saída</strong><span>As novas viagens aparecerão aqui.</span></div>';
+                    return;
+                }
+                container.innerHTML = upcoming.map(trip => `<div class="upcoming-row-v32"><div class="upcoming-date"><b>${escapeHTML((trip.date || '').split('-')[2] || '--')}</b><span>${escapeHTML(formatDate(trip.date).split('/')[1] || '')}</span></div><img src="${safeImageSrc(trip.img)}"><div><strong>${escapeHTML(trip.name || 'Embarcação')}</strong><span>${escapeHTML(trip.origin || 'Origem')} <i class="fas fa-arrow-right"></i> ${escapeHTML(trip.destiny || 'Destino')}</span><small>${escapeHTML(trip.time || '--:--')} • ${escapeHTML(trip.departure || 'Porto a confirmar')}</small></div></div>`).join('');
+            }
+
+            function renderDataHealth(data) {
+                const fleet = Object.values(data.barcos_cadastrados || {});
+                const trips = flattenTrips(data.barcos);
+                const fleetMissingContact = fleet.filter(boat => getContacts(boat).length === 0).length;
+                const tripsMissingContact = trips.filter(trip => getContacts(trip).length === 0).length;
+                const tripsMissingPhoto = trips.filter(trip => !trip.img).length;
+                const pastTrips = trips.filter(trip => !isUpcomingTrip(trip)).length;
+                const checks = [
+                    {icon:'fa-phone', label:'Embarcações sem contato', value:fleetMissingContact, ok:fleetMissingContact === 0},
+                    {icon:'fa-route', label:'Saídas sem contato copiado', value:tripsMissingContact, ok:tripsMissingContact === 0},
+                    {icon:'fa-image', label:'Saídas sem fotografia', value:tripsMissingPhoto, ok:tripsMissingPhoto === 0},
+                    {icon:'fa-history', label:'Saídas já encerradas', value:pastTrips, ok:pastTrips === 0, neutral:true}
+                ];
+                document.getElementById('data-health-list').innerHTML = checks.map(check => `<div class="health-row-v32 ${check.ok ? 'ok' : (check.neutral ? 'neutral' : 'warning')}"><div><i class="fas ${check.icon}"></i><span>${check.label}</span></div><b>${check.ok ? '<i class="fas fa-check"></i>' : check.value}</b></div>`).join('');
+            }
+
             // FUNÇÕES DE AÇÃO
             window.processFleetImage = function(input) {
                 if (input.files && input.files[0]) {
@@ -361,50 +539,185 @@
                     r.onload = e => {
                         const img = new Image(); img.src = e.target.result;
                         img.onload = () => {
-                            const c = document.createElement('canvas'); const s = Math.min(1, 600/Math.max(img.width, img.height));
+                            const c = document.createElement('canvas'); const s = Math.min(1, 960/Math.max(img.width, img.height));
                             c.width = Math.max(1, Math.round(img.width*s)); c.height = Math.max(1, Math.round(img.height*s));
                             c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-                            fleetImgBase64 = c.toDataURL('image/jpeg', 0.6);
+                            fleetImgBase64 = c.toDataURL('image/jpeg', 0.72);
                             const p = document.getElementById('fleet-preview'); p.src=fleetImgBase64; p.style.display='block';
                         }
                     }; r.readAsDataURL(input.files[0]);
                 }
             }
 
-            window.saveFleetBoat = function() {
+            window.editFleet = function(id) {
+                const boat = adminFleetData[id];
+                if(!boat) return alert('Embarcação não encontrada.');
+                const contacts = getContacts(boat);
+                document.getElementById('fleet-edit-id').value = id;
+                document.getElementById('fleet-name').value = boat.name || '';
+                document.getElementById('fleet-tel1').value = contacts[0] || '';
+                document.getElementById('fleet-tel2').value = contacts[1] || '';
+                fleetImgBase64 = boat.img || '';
+                const preview = document.getElementById('fleet-preview');
+                preview.src = safeImageSrc(boat.img);
+                preview.style.display = 'block';
+                document.getElementById('fleet-form-title').innerText = 'Editar embarcação';
+                document.getElementById('fleet-save-button').innerHTML = '<i class="fas fa-sync-alt"></i> SALVAR E SINCRONIZAR';
+                document.getElementById('fleet-cancel-edit').style.display = 'block';
+                document.getElementById('fleet-edit-notice').style.display = 'flex';
+                document.getElementById('fleet-name').focus();
+                document.getElementById('fleet-name').scrollIntoView({behavior:'smooth', block:'center'});
+            }
+
+            window.cancelFleetEdit = function() {
+                document.getElementById('fleet-edit-id').value = '';
+                document.getElementById('fleet-name').value = '';
+                document.getElementById('fleet-tel1').value = '';
+                document.getElementById('fleet-tel2').value = '';
+                document.getElementById('fleet-file').value = '';
+                document.getElementById('fleet-preview').style.display = 'none';
+                document.getElementById('fleet-form-title').innerText = 'Nova embarcação';
+                document.getElementById('fleet-save-button').innerHTML = '<i class="fas fa-save"></i> SALVAR EMBARCAÇÃO';
+                document.getElementById('fleet-cancel-edit').style.display = 'none';
+                document.getElementById('fleet-edit-notice').style.display = 'none';
+                fleetImgBase64 = '';
+            }
+
+            window.openFleetWhatsApp = function(id) {
+                const boat = adminFleetData[id];
+                const phone = getContacts(boat || {})[0];
+                if(phone) window.open(`https://wa.me/${whatsappPhone(phone)}`, '_blank', 'noopener');
+            }
+
+            async function syncFleetToTrips(id, previousName, boat) {
+                const barcos = latestDatabase.barcos || {};
+                const updates = {};
+                Object.entries(barcos).forEach(([day, entries]) => {
+                    Object.entries(entries || {}).forEach(([key, trip]) => {
+                        const sameId = String(trip.boatId || '') === String(id);
+                        const legacyMatch = !trip.boatId && previousName && String(trip.name || '').trim().toLocaleLowerCase('pt-BR') === String(previousName).trim().toLocaleLowerCase('pt-BR');
+                        if(sameId || legacyMatch) {
+                            updates[`barcos/${day}/${key}/boatId`] = boat.id;
+                            updates[`barcos/${day}/${key}/name`] = boat.name;
+                            updates[`barcos/${day}/${key}/img`] = boat.img;
+                            updates[`barcos/${day}/${key}/tel1`] = boat.tel1;
+                            updates[`barcos/${day}/${key}/tel2`] = boat.tel2 || '';
+                        }
+                    });
+                });
+                if(Object.keys(updates).length) await db.ref().update(updates);
+                return Object.keys(updates).length / 5;
+            }
+
+            window.syncAllFleetTrips = async function() {
+                const fleetEntries = Object.entries(latestDatabase.barcos_cadastrados || {});
+                const trips = flattenTrips(latestDatabase.barcos);
+                if(!fleetEntries.length || !trips.length) return showToast('Não há dados para sincronizar.');
+                if(!confirm('Atualizar nome, foto e contatos das viagens usando a Frota Base?')) return;
+
+                const updates = {};
+                let changedTrips = 0;
+                trips.forEach(trip => {
+                    const match = fleetEntries.find(([key, boat]) => String(trip.boatId || '') === String(boat.id || key)) ||
+                        fleetEntries.find(([, boat]) => String(boat.name || '').trim().toLocaleLowerCase('pt-BR') === String(trip.name || '').trim().toLocaleLowerCase('pt-BR'));
+                    if(!match) return;
+                    const [fleetKey, boat] = match;
+                    const contacts = getContacts(boat);
+                    updates[`barcos/${trip.day}/${trip.key}/boatId`] = boat.id || fleetKey;
+                    updates[`barcos/${trip.day}/${trip.key}/name`] = boat.name || trip.name || 'Embarcação';
+                    updates[`barcos/${trip.day}/${trip.key}/img`] = boat.img || trip.img || 'icone.png';
+                    updates[`barcos/${trip.day}/${trip.key}/tel1`] = contacts[0] || '';
+                    updates[`barcos/${trip.day}/${trip.key}/tel2`] = contacts[1] || '';
+                    changedTrips++;
+                });
+
+                if(!changedTrips) return showToast('Nenhuma viagem corresponde à Frota Base.');
+                try {
+                    await db.ref().update(updates);
+                    showToast(`${changedTrips} saída(s) sincronizada(s) com a Frota Base.`);
+                } catch(error) {
+                    console.error(error);
+                    alert('Não foi possível sincronizar os contatos.');
+                }
+            }
+
+            window.saveFleetBoat = async function() {
                 const n = document.getElementById('fleet-name').value.trim();
                 const t1 = document.getElementById('fleet-tel1').value.replace(/\D/g,'');
                 const t2 = document.getElementById('fleet-tel2').value.replace(/\D/g,'');
-                if(!n || !t1 || !fleetImgBase64) return alert("Preencha tudo");
+                const editId = document.getElementById('fleet-edit-id').value;
+                const previousBoat = editId ? adminFleetData[editId] : null;
+                if(!n || !t1 || !fleetImgBase64) return alert("Informe nome, WhatsApp principal e fotografia.");
                 if(t1.length < 10) return alert("Informe um WhatsApp válido com DDD.");
-                const id = Date.now();
-                db.ref('barcos_cadastrados/'+id).set({id:id, name:n, tel1:t1, tel2:t2, img:fleetImgBase64}).then(()=>{
-                    showToast("Barco Salvo!");
-                    document.getElementById('fleet-name').value="";
-                    document.getElementById('fleet-tel1').value="";
-                    document.getElementById('fleet-tel2').value="";
-                    document.getElementById('fleet-preview').style.display='none';
-                    fleetImgBase64="";
-                }).catch(()=>alert("Não foi possível salvar. Verifique sua conexão."));
+                if(t2 && t2.length < 10) return alert("Revise o segundo WhatsApp ou deixe o campo vazio.");
+                const id = editId || String(Date.now());
+                const boat = {...(previousBoat || {}), id:id, name:n, tel1:t1, tel2:t2, img:fleetImgBase64};
+                const saveButton = document.getElementById('fleet-save-button');
+                saveButton.disabled = true;
+                saveButton.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> SALVANDO...';
+                try {
+                    await db.ref('barcos_cadastrados/'+id).set(boat);
+                    const synced = editId ? await syncFleetToTrips(id, previousBoat && previousBoat.name, boat) : 0;
+                    cancelFleetEdit();
+                    showToast(editId ? `Embarcação atualizada${synced ? ` e sincronizada em ${synced} saída(s)` : ''}.` : 'Embarcação cadastrada com sucesso.');
+                } catch(error) {
+                    console.error(error);
+                    alert("Não foi possível salvar. Verifique sua conexão.");
+                } finally {
+                    saveButton.disabled = false;
+                    if(document.getElementById('fleet-edit-id').value) saveButton.innerHTML = '<i class="fas fa-sync-alt"></i> SALVAR E SINCRONIZAR';
+                }
             }
 
-            window.deleteFleet = function(id) { if(confirm("Excluir este barco da frota base?")) db.ref('barcos_cadastrados/'+id).remove().catch(()=>alert("Não foi possível excluir.")); }
+            window.copyTripText = async function(day, key) {
+                const trip = adminTripsData.find(item => item.day === day && item.key === key);
+                if(!trip) return;
+                const contacts = getContacts(trip);
+                const text = `SAÍDA DE EMBARCAÇÃO • BARCOAPP\n${trip.name || 'Embarcação'}\n${trip.origin || 'Origem'} → ${trip.destiny || 'Destino'}\nEmbarque: ${trip.departure || 'Consultar'}\n${formatDate(trip.date)} às ${trip.time || '--:--'}\nPassagem: ${trip.price_p ? `R$ ${trip.price_p}` : 'Consultar'}${contacts[0] ? `\nContato: ${formatPhone(contacts[0])}` : ''}`;
+                try { await navigator.clipboard.writeText(text); showToast('Informações da saída copiadas.'); }
+                catch(error) { alert(text); }
+            }
+
+            window.exportBackup = function() {
+                const blob = new Blob([JSON.stringify(latestDatabase, null, 2)], {type:'application/json'});
+                const date = new Date().toISOString().slice(0,10);
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `barcoapp-backup-${date}.json`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+                showToast('Backup exportado com sucesso.');
+            }
+
+            window.deleteFleet = function(id) { if(confirm("Excluir esta embarcação da frota? As viagens já publicadas não serão apagadas.")) db.ref('barcos_cadastrados/'+id).remove().then(() => { if(document.getElementById('fleet-edit-id').value === String(id)) cancelFleetEdit(); showToast('Embarcação excluída.'); }).catch(()=>alert("Não foi possível excluir.")); }
             window.deleteTrip = function(d,k) { if(confirm("Excluir esta viagem publicada?")) db.ref(`barcos/${d}/${k}`).remove().catch(()=>alert("Não foi possível excluir.")); }
             window.deleteUser = function(u) { if(confirm("Remover este usuário cadastrado?")) db.ref('usuarios_cadastrados/'+u).remove().catch(()=>alert("Não foi possível remover.")); }
             window.resolveReport = function(k) { if(confirm("Marcar esta denúncia como resolvida?")) db.ref('denuncias/'+k).remove().catch(()=>alert("Não foi possível resolver.")); }
 
-            window.setGlobalAlert = function(a) { db.ref('config/alerta').set({text:document.getElementById('alert-text-config').value, active:a}).then(()=>showToast("Atualizado")); }
-            window.addBanner = function() { 
-                const u=document.getElementById('banner-url').value, l=document.getElementById('banner-link').value;
-                if(!u || !/^https?:\/\//i.test(u)) return alert("Informe uma URL de imagem válida, começando com http:// ou https://");
-                db.ref('config/carrossel').push({img:u, link:l}).then(()=>showToast("Banner adicionado")).catch(()=>alert("Não foi possível adicionar o banner."));
+            window.setGlobalAlert = function(active) {
+                const text = document.getElementById('alert-text-config').value.trim();
+                if(active && !text) return alert('Digite a mensagem antes de ligar o alerta.');
+                db.ref('config/alerta').set({text:text, active:active}).then(()=>showToast(active ? "Alerta publicado." : "Alerta desligado.")).catch(()=>alert('Não foi possível atualizar o alerta.'));
             }
-            window.delBanner = function(k) { if(confirm("Apagar?")) db.ref('config/carrossel/'+k).remove(); }
+            window.addBanner = function() { 
+                const u=document.getElementById('banner-url').value.trim(), l=document.getElementById('banner-link').value.trim();
+                if(!u || !/^https?:\/\//i.test(u)) return alert("Informe uma URL de imagem válida, começando com http:// ou https://");
+                if(l && !/^https?:\/\//i.test(l)) return alert('O link de destino deve começar com http:// ou https://.');
+                db.ref('config/carrossel').push({img:u, link:l}).then(()=>{ document.getElementById('banner-url').value=''; document.getElementById('banner-link').value=''; showToast("Banner adicionado."); }).catch(()=>alert("Não foi possível adicionar o banner."));
+            }
+            window.delBanner = function(k) { if(confirm("Apagar este banner?")) db.ref('config/carrossel/'+k).remove().catch(()=>alert('Não foi possível excluir o banner.')); }
             
             function renderConfig(c) {
-                if(c && c.alerta) document.getElementById('alert-text-config').value = c.alerta.text;
+                const alertConfig = c && c.alerta ? c.alerta : {text:'', active:false};
+                document.getElementById('alert-text-config').value = alertConfig.text || '';
+                const status = document.getElementById('alert-status-pill');
+                status.className = `status-pill ${alertConfig.active ? 'on' : 'off'}`;
+                status.innerText = alertConfig.active ? 'Ligado' : 'Desligado';
                 const bl = document.getElementById('banner-list'); bl.innerHTML="";
-                if(c && c.carrossel) Object.entries(c.carrossel).forEach(([k,v]) => bl.innerHTML+=`<div class="banner-item"><img src="${v.img}" style="width:100%"><button onclick="delBanner('${k}')" style="position:absolute;top:2px;right:2px;background:red;color:white;border:none">X</button></div>`);
+                if(c && c.carrossel) Object.entries(c.carrossel).forEach(([k,v]) => bl.innerHTML+=`<div class="banner-item banner-item-v32"><img src="${safeImageSrc(v.img)}" alt="Banner"><button onclick="delBanner('${String(k).replace(/'/g,'')})" title="Excluir banner"><i class="fas fa-times"></i></button></div>`);
+                if(!bl.children.length) bl.innerHTML = '<div class="admin-empty-state compact"><i class="far fa-images"></i><strong>Nenhum banner cadastrado</strong></div>';
             }
         });
     </script>
