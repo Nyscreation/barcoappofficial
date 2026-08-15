@@ -2,7 +2,8 @@
   "id": "com.barcoapp.logistica",
   "name": "BarcoApp - Logística Fluvial",
   "short_name": "BarcoApp",
-  "description": "Escala oficial de embarcações e logística fluvial. Gerencie transportes e horários com precisão.",
+  "description": "Horários, rotas, valores e contato com embarcações em um só aplicativo.",
+  "version": "3.1.0",
   "lang": "pt-BR",
   "dir": "ltr",
   "categories": [
@@ -20,8 +21,8 @@
     "minimal-ui"
   ],
   "orientation": "portrait",
-  "theme_color": "#020617",
-  "background_color": "#020617",
+  "theme_color": "#04111f",
+  "background_color": "#04111f",
   "related_applications": [],
   "prefer_related_applications": false,
   "launch_handler": {
