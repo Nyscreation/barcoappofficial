@@ -91,7 +91,7 @@
     <div id="login-overlay">
         <div class="login-card">
             <img src="logo.png" alt="BarcoApp" class="admin-login-logo">
-            <div class="version-chip" style="margin-bottom:8px;">Gestão profissional • v3.2</div>
+            <div class="version-chip" style="margin-bottom:8px;">Gestão profissional • v3.2.1</div>
             <h2 style="margin-bottom: 10px;">Painel Administrativo</h2>
             <p class="admin-login-copy">Gerencie frota, saídas, usuários e comunicação do BarcoApp.</p>
             <input type="password" id="admin-pass" placeholder="Senha de Acesso">
@@ -223,12 +223,13 @@
                 </div>
             </div>
             <div class="panel">
-                <div class="panel-header panel-header-v32"><div><span>DESTAQUES DO APLICATIVO</span><h3>Banners promocionais</h3></div></div>
+                <div class="panel-header panel-header-v32"><div><span>DESTAQUES DO APLICATIVO</span><h3>Banners promocionais</h3></div><span id="banner-count-label" class="count-pill">0 banners</span></div>
                 <div class="panel-body p-content">
+                    <p class="promo-admin-help"><i class="fas fa-bullhorn"></i> Esta é sua área promocional. Adicione campanhas e remova qualquer banner quando ele não for mais necessário.</p>
                     <input type="text" id="banner-url" placeholder="URL da Imagem">
                     <input type="text" id="banner-link" placeholder="Link de Destino">
-                    <button class="btn btn-primary" onclick="addBanner()">ADD BANNER</button>
-                    <div id="banner-list" style="margin-top:20px; display:grid; gap:10px; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr))"></div>
+                    <button id="add-banner-button" class="btn btn-primary" onclick="addBanner()"><i class="fas fa-plus"></i> ADICIONAR BANNER</button>
+                    <div id="banner-list" class="promo-banner-grid"></div>
                 </div>
             </div>
         </div>
@@ -705,9 +706,34 @@
                 const u=document.getElementById('banner-url').value.trim(), l=document.getElementById('banner-link').value.trim();
                 if(!u || !/^https?:\/\//i.test(u)) return alert("Informe uma URL de imagem válida, começando com http:// ou https://");
                 if(l && !/^https?:\/\//i.test(l)) return alert('O link de destino deve começar com http:// ou https://.');
-                db.ref('config/carrossel').push({img:u, link:l}).then(()=>{ document.getElementById('banner-url').value=''; document.getElementById('banner-link').value=''; showToast("Banner adicionado."); }).catch(()=>alert("Não foi possível adicionar o banner."));
+                const button = document.getElementById('add-banner-button');
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> ADICIONANDO...';
+                db.ref('config/carrossel').push({img:u, link:l}).then(()=>{
+                    document.getElementById('banner-url').value='';
+                    document.getElementById('banner-link').value='';
+                    showToast("Banner adicionado à área promocional.");
+                }).catch(()=>alert("Não foi possível adicionar o banner.")).finally(()=>{
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-plus"></i> ADICIONAR BANNER';
+                });
             }
-            window.delBanner = function(k) { if(confirm("Apagar este banner?")) db.ref('config/carrossel/'+k).remove().catch(()=>alert('Não foi possível excluir o banner.')); }
+            window.delBanner = function(key, button) {
+                if(!confirm("Remover este banner da área promocional?")) return;
+                if(button) {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> REMOVENDO';
+                }
+                db.ref('config/carrossel/'+key).remove()
+                    .then(()=>showToast('Banner removido da área promocional.'))
+                    .catch(()=>{
+                        alert('Não foi possível remover o banner. Verifique sua conexão.');
+                        if(button) {
+                            button.disabled = false;
+                            button.innerHTML = '<i class="fas fa-trash"></i> REMOVER';
+                        }
+                    });
+            }
             
             function renderConfig(c) {
                 const alertConfig = c && c.alerta ? c.alerta : {text:'', active:false};
@@ -715,9 +741,24 @@
                 const status = document.getElementById('alert-status-pill');
                 status.className = `status-pill ${alertConfig.active ? 'on' : 'off'}`;
                 status.innerText = alertConfig.active ? 'Ligado' : 'Desligado';
-                const bl = document.getElementById('banner-list'); bl.innerHTML="";
-                if(c && c.carrossel) Object.entries(c.carrossel).forEach(([k,v]) => bl.innerHTML+=`<div class="banner-item banner-item-v32"><img src="${safeImageSrc(v.img)}" alt="Banner"><button onclick="delBanner('${String(k).replace(/'/g,'')})" title="Excluir banner"><i class="fas fa-times"></i></button></div>`);
-                if(!bl.children.length) bl.innerHTML = '<div class="admin-empty-state compact"><i class="far fa-images"></i><strong>Nenhum banner cadastrado</strong></div>';
+                const bl = document.getElementById('banner-list');
+                const banners = c && c.carrossel ? Object.entries(c.carrossel) : [];
+                const counter = document.getElementById('banner-count-label');
+                counter.innerText = `${banners.length} ${banners.length === 1 ? 'banner' : 'banners'}`;
+                bl.innerHTML = banners.map(([key, banner], index) => {
+                    const safeKey = String(key).replace(/[^a-zA-Z0-9_-]/g, '');
+                    return `<article class="promo-banner-card">
+                        <div class="promo-banner-preview">
+                            <img src="${safeImageSrc(banner.img)}" alt="Banner promocional ${index + 1}" loading="lazy">
+                            <span>Banner ${index + 1}</span>
+                        </div>
+                        <div class="promo-banner-footer">
+                            <div><strong>Campanha promocional</strong><small><i class="fas fa-link"></i> ${banner.link ? 'Com link de destino' : 'Sem link de destino'}</small></div>
+                            <button class="promo-remove-button" type="button" onclick="delBanner('${safeKey}', this)" title="Remover banner"><i class="fas fa-trash"></i> REMOVER</button>
+                        </div>
+                    </article>`;
+                }).join('');
+                if(!banners.length) bl.innerHTML = '<div class="admin-empty-state compact promo-empty-state"><i class="far fa-images"></i><strong>Nenhum banner cadastrado</strong><span>Adicione uma imagem para começar sua área promocional.</span></div>';
             }
         });
     </script>
