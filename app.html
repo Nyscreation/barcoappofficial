@@ -143,7 +143,9 @@
         .day-row { padding: 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-weight: 600; color: var(--text-dim); cursor: pointer; }
     </style>
     <link rel="stylesheet" href="barcoapp-v3.1.css">
+    <link rel="stylesheet" href="barcoapp-v3.2.css">
     <script src="barcoapp-v3.1.js" defer></script>
+    <script src="barcoapp-v3.2.js" defer></script>
 </head>
 <body class="page-app">
 
@@ -162,7 +164,7 @@
 
     <section id="screen-welcome" style="height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:30px; text-align:center; overflow-y:auto;">
         <img src="logo.png" class="welcome-logo" alt="Logo BarcoApp">
-        <span class="version-chip" style="margin-bottom:12px;"><i class="fas fa-sparkles"></i> Versão 3.1</span>
+        <span class="version-chip" style="margin-bottom:12px;"><i class="fas fa-sparkles"></i> Versão 3.2</span>
         <h1 style="font-size:2.5rem; font-weight:800; margin:0; background:var(--gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">BarcoApp</h1>
         <p class="welcome-subtitle" style="color:var(--text-dim); margin-bottom:24px;">Horários, rotas e contato com embarcações em um só lugar.</p>
         <div class="welcome-form">
@@ -253,6 +255,16 @@
                     <div style="text-align:right;"><span style="font-size:0.7rem; display:block; color:var(--accent);">CAMAROTE</span><b id="modal-price-c" style="font-size:1.1rem; color:white;"></b></div>
                 </div>
 
+                <div id="modal-contact-card" class="boat-contact-card">
+                    <div class="boat-contact-icon"><i class="fab fa-whatsapp"></i></div>
+                    <div class="boat-contact-copy">
+                        <span>CONTATO DA EMBARCAÇÃO</span>
+                        <strong id="modal-contact-primary">Consultando...</strong>
+                        <small id="modal-contact-secondary" style="display:none;"></small>
+                    </div>
+                    <button id="btn-copy-contact" class="contact-copy-btn" type="button" title="Copiar contato"><i class="far fa-copy"></i></button>
+                </div>
+
                 <div style="text-align:center; margin-top:20px; border-top:1px solid var(--border); padding-top:15px;">
                     <span style="font-size:0.7rem; font-weight:700; color:var(--text-dim);">AVALIAR EMBARCAÇÃO</span>
                     <div class="stars-container">
@@ -271,7 +283,27 @@
                     <button id="btn-wa2" class="btn-main" style="background:#128c7e; display:flex; align-items:center; justify-content:center; gap:8px;">ZAP 2</button>
                 </div>
                 
-                <button id="btn-share-post" class="btn-main" style="background:var(--card-glass); border:1px solid var(--border); margin-top:10px;">COMPARTILHAR LINK</button>
+                <button id="btn-share-post" class="btn-main share-card-trigger"><i class="fas fa-image"></i> COMPARTILHAR CARD</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="share-card-modal" class="modal share-card-modal" onclick="closeShareCardModal()">
+        <div class="modal-content share-card-sheet" onclick="event.stopPropagation()">
+            <div class="share-card-header">
+                <div><span>DIVULGAÇÃO PROFISSIONAL</span><h3>Card da saída</h3></div>
+                <button type="button" onclick="closeShareCardModal()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="share-card-loading" class="share-card-loading">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <strong>Preparando o card...</strong>
+                <span>Foto e informações da saída</span>
+            </div>
+            <img id="share-card-preview" class="share-card-preview" alt="Prévia do card da saída" style="display:none;">
+            <p class="share-card-helper">No celular, toque em compartilhar e escolha o WhatsApp. O card já leva a foto e todos os dados importantes.</p>
+            <div class="share-card-actions">
+                <button id="btn-share-generated" class="btn-main" type="button" onclick="shareGeneratedCard()" disabled><i class="fab fa-whatsapp"></i> COMPARTILHAR AGORA</button>
+                <button id="btn-download-generated" class="btn-secondary-v32" type="button" onclick="downloadGeneratedCard()" disabled><i class="fas fa-download"></i> BAIXAR CARD</button>
             </div>
         </div>
     </div>
@@ -404,12 +436,139 @@
             let currentNewBoatImg = "";
             let currentOpenBoat = null; 
             let carouselInstance = null;
+            let generatedShareBlob = null;
+            let generatedShareUrl = "";
+            let shareGenerationToken = 0;
             const diasSemana = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
 
             function escapeHTML(value) {
                 return String(value ?? '').replace(/[&<>'"]/g, char => ({
                     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
                 }[char]));
+            }
+
+            function normalizePhone(value) {
+                return String(value || '').replace(/\D/g, '');
+            }
+
+            function getBoatContacts(boat) {
+                const values = [
+                    boat && boat.tel1,
+                    boat && boat.whatsapp,
+                    boat && boat.telefone,
+                    boat && boat.phone,
+                    boat && boat.contato,
+                    boat && boat.celular,
+                    boat && boat.tel2,
+                    boat && boat.whatsapp2,
+                    boat && boat.telefone2
+                ].map(normalizePhone).filter(phone => phone.length >= 10);
+                return [...new Set(values)];
+            }
+
+            function formatPhoneBR(value) {
+                let phone = normalizePhone(value);
+                if(phone.startsWith('55') && (phone.length === 12 || phone.length === 13)) phone = phone.slice(2);
+                if(phone.length === 11) return `(${phone.slice(0,2)}) ${phone.slice(2,7)}-${phone.slice(7)}`;
+                if(phone.length === 10) return `(${phone.slice(0,2)}) ${phone.slice(2,6)}-${phone.slice(6)}`;
+                return phone || 'Contato não informado';
+            }
+
+            function phoneForWhatsApp(value) {
+                const phone = normalizePhone(value);
+                if(phone.startsWith('55') && (phone.length === 12 || phone.length === 13)) return phone;
+                return phone ? `55${phone}` : '';
+            }
+
+            async function resolveBoatData(trip) {
+                const currentContacts = getBoatContacts(trip);
+                let baseBoat = null;
+
+                if(trip.boatId) {
+                    try {
+                        const baseSnapshot = await rtdb.ref(`barcos_cadastrados/${trip.boatId}`).once('value');
+                        baseBoat = baseSnapshot.val();
+                    } catch(error) {
+                        console.warn('Não foi possível consultar o cadastro atual da embarcação.', error);
+                    }
+                }
+
+                if(!baseBoat && currentContacts.length === 0 && trip.name) {
+                    try {
+                        const fleetSnapshot = await rtdb.ref('barcos_cadastrados').once('value');
+                        const fleet = fleetSnapshot.val() || {};
+                        baseBoat = Object.values(fleet).find(item =>
+                            String(item.name || '').trim().toLocaleLowerCase('pt-BR') === String(trip.name).trim().toLocaleLowerCase('pt-BR')
+                        ) || null;
+                    } catch(error) {
+                        console.warn('Não foi possível procurar o contato pelo nome da embarcação.', error);
+                    }
+                }
+
+                const baseContacts = getBoatContacts(baseBoat || {});
+                return {
+                    ...trip,
+                    boatId: trip.boatId || (baseBoat && baseBoat.id) || '',
+                    img: trip.img || (baseBoat && baseBoat.img) || 'icone.png',
+                    tel1: baseContacts[0] || currentContacts[0] || '',
+                    tel2: baseContacts[1] || currentContacts[1] || ''
+                };
+            }
+
+            function renderBoatContacts(boat) {
+                const contacts = getBoatContacts(boat);
+                const primary = document.getElementById('modal-contact-primary');
+                const secondary = document.getElementById('modal-contact-secondary');
+                const copyButton = document.getElementById('btn-copy-contact');
+                const wa1 = document.getElementById('btn-wa1');
+                const wa2 = document.getElementById('btn-wa2');
+
+                if(!contacts.length) {
+                    primary.innerText = 'Contato não informado';
+                    secondary.style.display = 'none';
+                    copyButton.style.display = 'none';
+                    wa1.style.display = 'flex';
+                    wa1.innerHTML = '<i class="fab fa-whatsapp"></i> CONTATO INDISPONÍVEL';
+                    wa1.disabled = true;
+                    wa2.style.display = 'none';
+                    return;
+                }
+
+                primary.innerText = formatPhoneBR(contacts[0]);
+                secondary.innerText = contacts[1] ? `Alternativo: ${formatPhoneBR(contacts[1])}` : '';
+                secondary.style.display = contacts[1] ? 'block' : 'none';
+                copyButton.style.display = 'grid';
+                copyButton.onclick = () => copyBoatContact(contacts[0]);
+
+                wa1.disabled = false;
+                wa1.style.display = 'flex';
+                wa1.innerHTML = '<i class="fab fa-whatsapp"></i> FALAR NO WHATSAPP';
+                wa1.onclick = () => openBoatWhatsApp(contacts[0], boat);
+
+                if(contacts[1]) {
+                    wa2.style.display = 'flex';
+                    wa2.innerHTML = '<i class="fab fa-whatsapp"></i> SEGUNDO CONTATO';
+                    wa2.onclick = () => openBoatWhatsApp(contacts[1], boat);
+                } else {
+                    wa2.style.display = 'none';
+                }
+            }
+
+            function openBoatWhatsApp(phone, boat) {
+                const whatsapp = phoneForWhatsApp(phone);
+                if(!whatsapp) return openCustomAlert('Contato não informado.', 'Atenção', 'error');
+                const message = `Olá! Vi no BarcoApp a saída do ${boat.name || 'barco'} de ${boat.origin || 'origem'} para ${boat.destiny || 'destino'}, em ${formatDateBR(boat.date)} às ${boat.time || '--:--'}. Gostaria de mais informações.`;
+                window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+            }
+
+            async function copyBoatContact(phone) {
+                const value = formatPhoneBR(phone);
+                try {
+                    await navigator.clipboard.writeText(value);
+                    openCustomAlert('Contato copiado para a área de transferência.', 'Contato copiado');
+                } catch(error) {
+                    openCustomAlert(`Contato: ${value}`, 'Contato da embarcação');
+                }
             }
 
             // --- UI HELPERS ---
@@ -499,10 +658,12 @@
                     newOption.textContent = '➕ CADASTRAR NOVO BARCO';
                     select.appendChild(newOption);
                     if(data) {
-                        boatsDB = data;
-                        Object.values(data).sort((a,b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR')).forEach(b => {
+                        boatsDB = {};
+                        Object.entries(data).sort((a,b) => String(a[1].name || '').localeCompare(String(b[1].name || ''), 'pt-BR')).forEach(([key, boat]) => {
+                            const b = {...boat, id:boat.id || key};
+                            boatsDB[String(b.id)] = b;
                             const option = document.createElement('option');
-                            option.value = b.id;
+                            option.value = String(b.id);
                             option.textContent = b.name || 'Embarcação sem nome';
                             select.appendChild(option);
                         });
@@ -540,11 +701,11 @@
                         const img = new Image(); img.src = e.target.result;
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const scale = Math.min(1, 600 / Math.max(img.width, img.height));
+                            const scale = Math.min(1, 960 / Math.max(img.width, img.height));
                             canvas.width = Math.max(1, Math.round(img.width * scale));
                             canvas.height = Math.max(1, Math.round(img.height * scale));
                             canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                            currentNewBoatImg = canvas.toDataURL('image/jpeg', 0.6); 
+                            currentNewBoatImg = canvas.toDataURL('image/jpeg', 0.72); 
                             document.getElementById('new-boat-preview-img').src = currentNewBoatImg;
                             document.getElementById('new-boat-preview-img').style.display = 'block';
                             document.getElementById('txt-photo-label').style.display = 'none';
@@ -584,9 +745,10 @@
             }
 
             function saveTrip(boatData, dateVal) {
+                const boatContacts = getBoatContacts(boatData);
                 const trip = {
                     boatId: boatData.id, name: boatData.name, img: boatData.img,
-                    tel1: boatData.tel1, tel2: boatData.tel2 || "",
+                    tel1: boatContacts[0] || '', tel2: boatContacts[1] || '',
                     departure: document.getElementById('in-departure').value.trim(),
                     origin: document.getElementById('in-origin').value.trim(),
                     destiny: document.getElementById('in-destiny').value.trim(),
@@ -675,12 +837,12 @@
             window.openDirectDetails = function(d,k) { currentDayPage=d; openDetails(k); }
 
             window.openDetails = function(k) {
-                rtdb.ref(`barcos/${currentDayPage}/${k}`).once('value', s => {
-                    const b = s.val(); 
-                    if(!b) { openCustomAlert("Publicação não encontrada.", "Erro", "error"); return; }
-                    
-                    currentOpenBoat = b; 
-                    currentOpenBoat.key = k;
+                rtdb.ref(`barcos/${currentDayPage}/${k}`).once('value').then(async s => {
+                    const trip = s.val(); 
+                    if(!trip) { openCustomAlert("Publicação não encontrada.", "Erro", "error"); return; }
+
+                    const b = await resolveBoatData({...trip, key:k, dia:currentDayPage});
+                    currentOpenBoat = b;
                     
                     document.getElementById('modal-img').src = b.img || 'icone.png';
                     document.getElementById('modal-name').innerText = b.name || 'Embarcação';
@@ -691,11 +853,9 @@
                     document.getElementById('modal-price-p').innerText = b.price_p ? "R$ "+b.price_p : 'Consultar';
                     document.getElementById('modal-price-c').innerText = b.price_c ? "R$ "+b.price_c : 'Consultar';
                     
-                    document.getElementById('btn-share-post').onclick = () => shareBoat(b);
+                    document.getElementById('btn-share-post').onclick = () => shareBoat(currentOpenBoat);
                     document.getElementById('btn-like').onclick = () => registerVote(k, 'likes');
-                    document.getElementById('btn-wa1').onclick = () => b.tel1 ? window.open(`https://wa.me/55${String(b.tel1).replace(/\D/g,'')}`) : openCustomAlert("Contato não informado.", "Atenção", "error");
-                    if(b.tel2) { document.getElementById('btn-wa2').style.display='flex'; document.getElementById('btn-wa2').onclick=()=>window.open(`https://wa.me/55${b.tel2.replace(/\D/g,'')}`); }
-                    else document.getElementById('btn-wa2').style.display='none';
+                    renderBoatContacts(b);
 
                     // Reset Estrelas
                     for(let i=1; i<=5; i++) { const s = document.getElementById('s'+i); s.className = "far fa-star"; s.style.color = "#475569"; }
@@ -713,12 +873,267 @@
                         });
                     }
                     document.getElementById('boat-modal').style.display='flex';
+                }).catch(() => openCustomAlert('Não foi possível abrir os detalhes desta saída.', 'Sem conexão', 'error'));
+            }
+
+            function roundedRectPath(ctx, x, y, width, height, radius) {
+                const r = Math.min(radius, width / 2, height / 2);
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.arcTo(x + width, y, x + width, y + height, r);
+                ctx.arcTo(x + width, y + height, x, y + height, r);
+                ctx.arcTo(x, y + height, x, y, r);
+                ctx.arcTo(x, y, x + width, y, r);
+                ctx.closePath();
+            }
+
+            function loadCardImage(src, fallback = true) {
+                return new Promise(resolve => {
+                    const image = new Image();
+                    if(/^https?:\/\//i.test(src || '')) image.crossOrigin = 'anonymous';
+                    image.onload = () => resolve(image);
+                    image.onerror = () => {
+                        if(fallback && src !== 'icone.png') loadCardImage('icone.png', false).then(resolve);
+                        else resolve(null);
+                    };
+                    image.src = src || 'icone.png';
                 });
             }
 
-            window.shareBoat = function(b) {
-                const txt = encodeURIComponent(`🚢 *BARCOAPP*\n*${b.name}*\n${b.origin} > ${b.destiny}\n📅 ${formatDateBR(b.date)} - ${b.time}\n💰 R$ ${b.price_p}`);
-                window.open(`https://wa.me/?text=${txt}`, '_blank');
+            function drawImageCover(ctx, image, x, y, width, height) {
+                if(!image) return;
+                const scale = Math.max(width / image.width, height / image.height);
+                const sourceWidth = width / scale;
+                const sourceHeight = height / scale;
+                const sourceX = (image.width - sourceWidth) / 2;
+                const sourceY = (image.height - sourceHeight) / 2;
+                ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+            }
+
+            function fitCanvasText(ctx, text, maxWidth, maxSize, minSize, weight = 800) {
+                let size = maxSize;
+                do {
+                    ctx.font = `${weight} ${size}px "Plus Jakarta Sans", Arial, sans-serif`;
+                    if(ctx.measureText(text).width <= maxWidth) return size;
+                    size -= 2;
+                } while(size > minSize);
+                return minSize;
+            }
+
+            function getShareMessage(boat) {
+                const contacts = getBoatContacts(boat);
+                const appUrl = new URL('index.html', window.location.href).href;
+                const passage = boat.price_p ? `R$ ${boat.price_p}` : 'Consultar';
+                const cabin = boat.price_c ? `R$ ${boat.price_c}` : 'Consultar';
+                return `🚢 *SAÍDA DE EMBARCAÇÃO • BARCOAPP*\n\n*${boat.name || 'Embarcação'}*\n📍 ${boat.origin || 'Origem'} → ${boat.destiny || 'Destino'}\n⚓ Embarque: ${boat.departure || 'Consultar porto'}\n📅 ${formatDateBR(boat.date)} às ${boat.time || '--:--'}\n🎫 Passagem: ${passage}\n🛏️ Camarote: ${cabin}${contacts[0] ? `\n📱 Contato: ${formatPhoneBR(contacts[0])}` : ''}\n\nConsulte outras saídas no BarcoApp:\n${appUrl}`;
+            }
+
+            async function createShareCard(boat) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1080;
+                canvas.height = 1350;
+                const ctx = canvas.getContext('2d');
+                const [boatImage, logoImage] = await Promise.all([
+                    loadCardImage(boat.img || 'icone.png'),
+                    loadCardImage('logo.png', false)
+                ]);
+
+                const background = ctx.createLinearGradient(0, 0, 1080, 1350);
+                background.addColorStop(0, '#061b31');
+                background.addColorStop(.58, '#082b48');
+                background.addColorStop(1, '#04111f');
+                ctx.fillStyle = background;
+                ctx.fillRect(0, 0, 1080, 1350);
+
+                drawImageCover(ctx, boatImage, 0, 0, 1080, 590);
+                const photoOverlay = ctx.createLinearGradient(0, 80, 0, 610);
+                photoOverlay.addColorStop(0, 'rgba(1,10,20,.06)');
+                photoOverlay.addColorStop(.62, 'rgba(4,17,31,.20)');
+                photoOverlay.addColorStop(1, '#061b31');
+                ctx.fillStyle = photoOverlay;
+                ctx.fillRect(0, 0, 1080, 620);
+
+                roundedRectPath(ctx, 54, 48, 385, 104, 28);
+                ctx.fillStyle = 'rgba(3,17,31,.80)';
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(141,223,240,.32)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                if(logoImage) drawImageCover(ctx, logoImage, 72, 61, 76, 76);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '800 31px "Plus Jakarta Sans", Arial, sans-serif';
+                ctx.fillText('BARCOAPP', 166, 94);
+                ctx.fillStyle = '#6de8fa';
+                ctx.font = '700 18px "Plus Jakarta Sans", Arial, sans-serif';
+                ctx.fillText('INFORMAÇÃO FLUVIAL', 166, 124);
+
+                roundedRectPath(ctx, 724, 62, 300, 70, 35);
+                ctx.fillStyle = '#18bede';
+                ctx.fill();
+                ctx.fillStyle = '#032238';
+                ctx.font = '800 22px "Plus Jakarta Sans", Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('SAÍDA CONFIRMADA', 874, 106);
+                ctx.textAlign = 'left';
+
+                ctx.fillStyle = '#6de8fa';
+                ctx.font = '800 22px "Plus Jakarta Sans", Arial, sans-serif';
+                ctx.fillText('PRÓXIMA VIAGEM', 62, 620);
+                const boatName = String(boat.name || 'Embarcação').toLocaleUpperCase('pt-BR');
+                fitCanvasText(ctx, boatName, 956, 62, 38);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(boatName, 62, 688);
+
+                roundedRectPath(ctx, 54, 735, 972, 150, 32);
+                ctx.fillStyle = 'rgba(255,255,255,.065)';
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(130,210,232,.22)';
+                ctx.stroke();
+                ctx.fillStyle = '#94dfee';
+                ctx.font = '700 19px "Plus Jakarta Sans", Arial, sans-serif';
+                ctx.fillText('ROTA', 86, 780);
+                const route = `${boat.origin || 'Origem'}  →  ${boat.destiny || 'Destino'}`;
+                fitCanvasText(ctx, route, 908, 42, 28);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(route, 86, 833);
+                ctx.fillStyle = '#a9bfd1';
+                ctx.font = '600 20px "Plus Jakarta Sans", Arial, sans-serif';
+                ctx.fillText(`Embarque: ${boat.departure || 'Consultar porto'}`, 86, 866);
+
+                const infoCards = [
+                    {x:54, label:'DATA', value:formatDateBR(boat.date) || 'Consultar'},
+                    {x:382, label:'HORÁRIO', value:boat.time || '--:--'},
+                    {x:710, label:'PASSAGEM', value:boat.price_p ? `R$ ${boat.price_p}` : 'Consultar'}
+                ];
+                infoCards.forEach(item => {
+                    roundedRectPath(ctx, item.x, 918, 316, 138, 26);
+                    ctx.fillStyle = 'rgba(5,24,41,.88)';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(112,211,232,.18)';
+                    ctx.stroke();
+                    ctx.fillStyle = '#6de8fa';
+                    ctx.font = '800 17px "Plus Jakarta Sans", Arial, sans-serif';
+                    ctx.fillText(item.label, item.x + 26, 960);
+                    fitCanvasText(ctx, String(item.value), 264, 31, 22, 800);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(String(item.value), item.x + 26, 1011);
+                });
+
+                const contacts = getBoatContacts(boat);
+                roundedRectPath(ctx, 54, 1086, 972, 142, 28);
+                const contactGradient = ctx.createLinearGradient(54, 1086, 1026, 1228);
+                contactGradient.addColorStop(0, '#15a96e');
+                contactGradient.addColorStop(1, '#087b66');
+                ctx.fillStyle = contactGradient;
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255,255,255,.78)';
+                ctx.font = '800 18px "Plus Jakarta Sans", Arial, sans-serif';
+                ctx.fillText('CONTATO DA EMBARCAÇÃO', 86, 1130);
+                const contactText = contacts[0] ? formatPhoneBR(contacts[0]) : 'Consulte pelo BarcoApp';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '800 38px "Plus Jakarta Sans", Arial, sans-serif';
+                ctx.fillText(contactText, 86, 1183);
+                ctx.textAlign = 'right';
+                ctx.font = '800 24px "Plus Jakarta Sans", Arial, sans-serif';
+                ctx.fillText(boat.price_c ? `CAMAROTE R$ ${boat.price_c}` : 'CAMAROTE: CONSULTAR', 992, 1175);
+                ctx.textAlign = 'left';
+
+                ctx.fillStyle = '#91aabd';
+                ctx.font = '700 19px "Plus Jakarta Sans", Arial, sans-serif';
+                ctx.fillText('Consulte outras saídas, horários e contatos no BarcoApp', 54, 1292);
+                ctx.fillStyle = '#22c7e8';
+                ctx.fillRect(54, 1318, 972, 5);
+
+                return new Promise((resolve, reject) => {
+                    try {
+                        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Falha ao gerar imagem')), 'image/png', .96);
+                    } catch(error) {
+                        reject(error);
+                    }
+                });
+            }
+
+            window.shareBoat = async function(boat) {
+                if(!boat) return;
+                currentOpenBoat = boat;
+                const modal = document.getElementById('share-card-modal');
+                const loading = document.getElementById('share-card-loading');
+                const preview = document.getElementById('share-card-preview');
+                const shareButton = document.getElementById('btn-share-generated');
+                const downloadButton = document.getElementById('btn-download-generated');
+                const token = ++shareGenerationToken;
+
+                if(generatedShareUrl) URL.revokeObjectURL(generatedShareUrl);
+                generatedShareBlob = null;
+                generatedShareUrl = '';
+                preview.style.display = 'none';
+                loading.style.display = 'flex';
+                shareButton.disabled = true;
+                downloadButton.disabled = true;
+                modal.style.display = 'flex';
+
+                try {
+                    const blob = await createShareCard(boat);
+                    if(token !== shareGenerationToken) return;
+                    generatedShareBlob = blob;
+                    generatedShareUrl = URL.createObjectURL(blob);
+                    preview.src = generatedShareUrl;
+                    preview.style.display = 'block';
+                    loading.style.display = 'none';
+                    shareButton.disabled = false;
+                    downloadButton.disabled = false;
+                } catch(error) {
+                    console.error('Erro ao gerar card:', error);
+                    closeShareCardModal();
+                    openCustomAlert('Não foi possível gerar o card com esta foto. Tente novamente.', 'Erro ao criar card', 'error');
+                }
+            }
+
+            window.shareGeneratedCard = async function() {
+                if(!generatedShareBlob || !currentOpenBoat) return;
+                const safeName = String(currentOpenBoat.name || 'barcoapp').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+                const filename = `saida-${safeName || 'barcoapp'}.png`;
+                const message = getShareMessage(currentOpenBoat);
+                const file = typeof File === 'function' ? new File([generatedShareBlob], filename, {type:'image/png'}) : null;
+                let canShareFile = false;
+                try { canShareFile = Boolean(file && navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))); }
+                catch(error) { canShareFile = false; }
+
+                if(canShareFile) {
+                    try {
+                        await navigator.share({title:`Saída do ${currentOpenBoat.name || 'barco'}`, text:message, files:[file]});
+                        closeShareCardModal();
+                        return;
+                    } catch(error) {
+                        if(error && error.name === 'AbortError') return;
+                        console.warn('Compartilhamento de arquivo indisponível.', error);
+                    }
+                }
+
+                downloadGeneratedCard();
+                closeShareCardModal();
+                window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+                openCustomAlert('O card foi baixado. No WhatsApp, anexe a imagem salva à mensagem aberta.', 'Card preparado');
+            }
+
+            window.downloadGeneratedCard = function() {
+                if(!generatedShareBlob || !currentOpenBoat) return;
+                const safeName = String(currentOpenBoat.name || 'barcoapp').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+                const link = document.createElement('a');
+                link.href = generatedShareUrl || URL.createObjectURL(generatedShareBlob);
+                link.download = `saida-${safeName || 'barcoapp'}.png`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }
+
+            window.closeShareCardModal = function() {
+                shareGenerationToken++;
+                document.getElementById('share-card-modal').style.display = 'none';
+                document.getElementById('share-card-preview').src = '';
+                if(generatedShareUrl) URL.revokeObjectURL(generatedShareUrl);
+                generatedShareUrl = '';
+                generatedShareBlob = null;
             }
 
             window.registerVote = function(k, t) {
