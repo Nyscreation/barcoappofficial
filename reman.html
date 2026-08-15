@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Remanso | Gestão Fluvial</title>
+    
+    <meta name="theme-color" content="#071625">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icone.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+
+    <style>
+        :root {
+            --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --text-dim: #94a3b8;
+            --primary: #fbbf24; --gold: #f59e0b; 
+            --accent: #22d3ee; --green: #10b981;
+            --gradient: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            --glass: rgba(30, 41, 59, 0.7);
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow-x: hidden; display: flex; flex-direction: column; }
+
+        /* HEADER */
+        .header { padding: 25px; display: flex; align-items: center; gap: 15px; justify-content: center; }
+        .logo-box { width: 40px; height: 40px; background: var(--gradient); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #0f172a; }
+        
+        /* TELAS */
+        .screen { display: none; padding: 20px; flex: 1; animation: fadeIn 0.5s ease; flex-direction: column; }
+        .screen.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* INPUTS & SELECTS */
+        select, input { width: 100%; background: var(--card); border: 1px solid rgba(255,255,255,0.1); padding: 16px; border-radius: 14px; color: white; font-size: 1rem; margin-bottom: 15px; outline: none; appearance: none; }
+        select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23fbbf24%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto; }
+
+        /* BOTÕES */
+        .btn-main { width: 100%; padding: 18px; border-radius: 16px; border: none; background: var(--gradient); color: #0f172a; font-weight: 800; font-size: 1rem; cursor: pointer; box-shadow: 0 10px 30px rgba(251, 191, 36, 0.2); margin-top: auto; }
+        .btn-link { background: none; border: none; color: var(--text-dim); text-decoration: underline; margin-top: 15px; cursor: pointer; font-size: 0.9rem; }
+
+        /* LISTA DE BENEFÍCIOS (TELA VENDA) */
+        .benefit-list { margin-top: 20px; text-align: left; }
+        .benefit-item { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .b-icon { width: 40px; height: 40px; background: rgba(251, 191, 36, 0.1); color: var(--gold); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        
+        /* PRICE TAG */
+        .price-tag { font-size: 2.5rem; font-weight: 800; color: var(--primary); margin: 20px 0 5px 0; }
+        .price-sub { color: var(--text-dim); font-size: 0.9rem; }
+
+        /* DASHBOARD STYLES (Mesmo do anterior) */
+        .dash-header { padding: 20px; background: var(--card); display: flex; justify-content: space-between; align-items: center; }
+        .card-dash { background: var(--card); padding: 20px; border-radius: 16px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); }
+        .action-btn { width: 100%; padding: 15px; background: var(--gradient); border: none; border-radius: 12px; font-weight: 700; color: #000; margin-top: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; }
+    </style>
+    <link rel="stylesheet" href="barcoapp-v3.1.css">
+    <link rel="stylesheet" href="barcoapp-v3.2.css">
+    <script src="barcoapp-v3.1.js" defer></script>
+    <script src="barcoapp-v3.2.js" defer></script>
+</head>
+<body class="page-remanso">
+
+    <div id="screen-select" class="screen active" style="justify-content: center; text-align: center;">
+        <img src="logo.png" alt="BarcoApp" style="width:84px;height:84px;object-fit:contain;margin:0 auto 12px;filter:drop-shadow(0 14px 28px rgba(34,211,238,.18));">
+        <span class="version-chip" style="margin:0 auto 14px;">Remanso • v3.2.1</span>
+        <h1 style="margin: 0 0 10px 0; font-size: 1.8rem;">Remanso</h1>
+        <p style="color: var(--text-dim); margin-bottom: 40px;">Identifique sua embarcação para acessar o painel.</p>
+
+        <select id="boat-select">
+            <option value="">Carregando frota...</option>
+        </select>
+
+        <button class="btn-main" onclick="confirmBoatSelection()">ACESSAR PAINEL</button>
+        <button class="btn-link" onclick="goToManualRegister()">Meu barco não está na lista</button>
+    </div>
+
+    <div id="screen-sales" class="screen" style="text-align: center;">
+        <div style="flex: 1; overflow-y: auto;">
+            <h2 style="color: var(--primary); margin-top: 10px;">Assuma o Comando Total</h2>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">Gerencie <span id="sales-boat-name" style="color:white; font-weight:700;">seu barco</span> com ferramentas profissionais.</p>
+
+            <div class="benefit-list">
+                <div class="benefit-item">
+                    <div class="b-icon"><i class="fas fa-list-ol"></i></div>
+                    <div>
+                        <div style="font-weight: 700;">Lista de Passageiros</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim);">Gere PDF para a Capitania em 1 clique.</div>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="b-icon"><i class="fas fa-box-open"></i></div>
+                    <div>
+                        <div style="font-weight: 700;">Controle de Encomendas</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim);">Registre fretes e envie recibos no Zap.</div>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="b-icon"><i class="fas fa-chart-line"></i></div>
+                    <div>
+                        <div style="font-weight: 700;">Relatórios Financeiros</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim);">Saiba exatamente quanto faturou.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="price-tag">R$ 49,90<span style="font-size: 1rem;">/mês</span></div>
+            <p class="price-sub">Cancele quando quiser.</p>
+        </div>
+
+        <button class="btn-main" onclick="completeSetup()" style="margin-top: 20px;">
+            COMEÇAR AGORA <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+
+    <div id="screen-dash" class="screen" style="padding: 0;">
+        <div class="dash-header">
+            <div>
+                <h2 style="margin:0; font-size:1rem; color:var(--primary);" id="dash-boat-name">...</h2>
+                <span style="font-size:0.7rem; background:rgba(255,255,255,0.1); padding:4px 8px; border-radius:10px;">Plano Premium</span>
+            </div>
+            <div class="logo-box" style="width:35px; height:35px; font-size:1rem;"><i class="fas fa-crown"></i></div>
+        </div>
+
+        <div style="padding: 20px; overflow-y: auto;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div class="card-dash" style="margin:0; text-align:center;">
+                    <div style="font-size:1.5rem; font-weight:800; color:var(--accent);">0</div>
+                    <div style="font-size:0.7rem; color:var(--text-dim);">VIAGENS HOJE</div>
+                </div>
+                <div class="card-dash" style="margin:0; text-align:center;">
+                    <div style="font-size:1.5rem; font-weight:800; color:var(--primary);">0.0</div>
+                    <div style="font-size:0.7rem; color:var(--text-dim);">AVALIAÇÃO</div>
+                </div>
+            </div>
+
+            <div class="card-dash">
+                <div style="color:var(--text-dim); font-size:0.8rem; font-weight:700;">AÇÕES RÁPIDAS</div>
+                <button class="action-btn" onclick="alert('Abrir tela de publicar viagem...')"><i class="fas fa-plus-circle"></i> ANUNCIAR VIAGEM</button>
+                <button class="action-btn" style="background:var(--card); color:white; border:1px solid rgba(255,255,255,0.1);" onclick="alert('Abrir tela de encomendas...')"><i class="fas fa-box"></i> REGISTRAR ENCOMENDA</button>
+                <button class="action-btn" style="background:var(--card); color:white; border:1px solid rgba(255,255,255,0.1);" onclick="alert('Gerar PDF...')"><i class="fas fa-file-alt"></i> LISTA DE PASSAGEIROS</button>
+            </div>
+            
+            <button onclick="logout()" style="width:100%; padding:15px; background:none; border:none; color:var(--red); cursor:pointer;">Sair do Painel</button>
+        </div>
+    </div>
+
+    <div id="screen-manual" class="screen" style="justify-content: center;">
+        <h2 style="text-align: center;">Cadastro Manual</h2>
+        <input type="text" id="manual-name" placeholder="Nome do Barco">
+        <input type="tel" id="manual-tel" placeholder="WhatsApp">
+        <button class="btn-main" onclick="manualRegister()">Cadastrar</button>
+        <button class="btn-link" onclick="location.reload()">Voltar</button>
+    </div>
+
+    <script>
+        // CONFIG FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyCSqpD1irHfgXpzAytoRn_VNwImNzuGouE",
+            authDomain: "barcoapp01.firebaseapp.com",
+            databaseURL: "https://barcoapp01-default-rtdb.firebaseio.com",
+            projectId: "barcoapp01",
+            storageBucket: "barcoapp01.firebasestorage.app",
+            messagingSenderId: "715122174520",
+            appId: "1:715122174520:web:da4ae91a6862c129d714cd"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const rtdb = firebase.database();
+
+        let selectedBoatData = null;
+
+        // INICIALIZAÇÃO
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verifica se já tem dono logado
+            const savedOwner = localStorage.getItem('remanso_owner');
+            if(savedOwner) {
+                selectedBoatData = JSON.parse(savedOwner);
+                loadDashboard();
+            } else {
+                loadBoatsList(); // Carrega a lista para a Tela 1
+            }
+        });
+
+        // 1. CARREGAR LISTA DE BARCOS (DO FIREBASE)
+        function loadBoatsList() {
+            const select = document.getElementById('boat-select');
+            select.innerHTML = '<option value="">Carregando frota...</option>';
+
+            rtdb.ref('barcos_cadastrados').once('value', snap => {
+                const data = snap.val();
+                if(data) {
+                    select.innerHTML = '<option value="">-- Selecione seu Barco --</option>';
+                    Object.values(data).forEach(boat => {
+                        // Cria um atributo data-json para guardar o objeto todo no option
+                        const opt = document.createElement('option');
+                        opt.value = boat.id;
+                        opt.innerText = boat.name;
+                        opt.dataset.json = JSON.stringify(boat);
+                        select.appendChild(opt);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">Nenhum barco encontrado</option>';
+                }
+            });
+        }
+
+        // 2. SELECIONAR BARCO E IR PARA VENDAS
+        window.confirmBoatSelection = function() {
+            const select = document.getElementById('boat-select');
+            const id = select.value;
+            
+            if(!id) return alert("Selecione uma embarcação da lista.");
+
+            // Pega os dados escondidos no option
+            const json = select.options[select.selectedIndex].dataset.json;
+            selectedBoatData = JSON.parse(json);
+
+            // Preenche a tela de vendas
+            document.getElementById('sales-boat-name').innerText = selectedBoatData.name;
+            
+            // Troca de tela
+            document.getElementById('screen-select').classList.remove('active');
+            document.getElementById('screen-sales').classList.add('active');
+        }
+
+        // 3. FINALIZAR SETUP (SIMULAÇÃO DE PAGAMENTO)
+        window.completeSetup = function() {
+            // Aqui entraria o checkout de pagamento real
+            // Por enquanto, salvamos direto
+            localStorage.setItem('remanso_owner', JSON.stringify(selectedBoatData));
+            
+            alert("Parabéns! Acesso liberado.");
+            loadDashboard();
+        }
+
+        // 4. CARREGAR DASHBOARD
+        function loadDashboard() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-dash').classList.add('active');
+            
+            document.getElementById('dash-boat-name').innerText = selectedBoatData.name;
+            
+            // Aqui você chamaria as funções de estatísticas reais (criadas no passo anterior)
+        }
+
+        // EXTRAS
+        window.goToManualRegister = function() {
+            document.getElementById('screen-select').classList.remove('active');
+            document.getElementById('screen-manual').classList.add('active');
+        }
+
+        window.manualRegister = function() {
+            const n = document.getElementById('manual-name').value;
+            const t = document.getElementById('manual-tel').value;
+            if(!n || !t) return alert("Preencha tudo");
+            
+            const newId = Date.now();
+            const newBoat = { id: newId, name: n, tel1: t, img: "" }; // Imagem vazia por enquanto
+            
+            // Salva no banco para entrar na lista oficial
+            firebase.auth().signInAnonymously().then(() => {
+                rtdb.ref('barcos_cadastrados/' + newId).set(newBoat).then(() => {
+                    selectedBoatData = newBoat;
+                    document.getElementById('screen-manual').classList.remove('active');
+                    document.getElementById('screen-sales').classList.add('active'); // Vai pra venda
+                    document.getElementById('sales-boat-name').innerText = n;
+                });
+            });
+        }
+
+        window.logout = function() {
+            if(confirm("Sair do painel?")) {
+                localStorage.removeItem('remanso_owner');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

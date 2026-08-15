@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Instalar BarcoApp</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#04111f">
+    
+    <link rel="apple-touch-icon" href="icone.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            margin: 0; padding: 0; height: 100vh;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+            color: white; overflow: hidden;
+        }
+
+        /* Fundo Decorativo (Luzes) */
+        body::before {
+            content: ''; position: absolute; top: -100px; left: -100px;
+            width: 300px; height: 300px; background: radial-gradient(circle, rgba(6,182,212,0.2) 0%, transparent 70%);
+            z-index: -1;
+        }
+        body::after {
+            content: ''; position: absolute; bottom: -100px; right: -100px;
+            width: 300px; height: 300px; background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        /* LOGO (IMAGEM) */
+        .app-logo {
+            width: 130px; height: auto;
+            border-radius: 32px; /* Cantos arredondados modernos */
+            box-shadow: 0 20px 50px rgba(6,182,212,0.3); /* Sombra Ciano */
+            margin-bottom: 25px;
+            animation: float 6s ease-in-out infinite; /* Animação de flutuar */
+        }
+        
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
+
+        h1 { font-size: 2.5rem; font-weight: 800; margin: 0; letter-spacing: -1px; }
+        p { color: #94a3b8; font-size: 1rem; max-width: 300px; margin: 10px auto 30px auto; line-height: 1.5; }
+
+        /* AREA DE INSTALAÇÃO */
+        .install-box {
+            background: rgba(30, 41, 59, 0.6);
+            padding: 30px; border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            width: 90%; max-width: 350px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+
+        .btn-install {
+            width: 100%; padding: 18px; border: none; border-radius: 16px;
+            font-weight: 800; font-size: 1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            margin-bottom: 15px; transition: transform 0.2s;
+            text-transform: uppercase;
+        }
+        .btn-install:active { transform: scale(0.97); }
+
+        .btn-android { background: #3ddc84; color: #000; box-shadow: 0 5px 20px rgba(61, 220, 132, 0.3); }
+        .btn-ios { background: #ffffff; color: #000; box-shadow: 0 5px 20px rgba(255,255,255,0.2); }
+
+        .link-web {
+            margin-top: 25px; display: block;
+            color: #06b6d4; text-decoration: none;
+            font-weight: 700; font-size: 0.9rem;
+            opacity: 0.8; transition: opacity 0.2s;
+        }
+        .link-web:hover { opacity: 1; }
+
+        /* RODAPÉ */
+        .footer {
+            position: absolute; bottom: 20px;
+            font-size: 0.7rem; color: #64748b;
+        }
+    </style>
+    <link rel="stylesheet" href="barcoapp-v3.1.css">
+    <link rel="stylesheet" href="barcoapp-v3.2.css">
+    <script src="barcoapp-v3.1.js" defer></script>
+    <script src="barcoapp-v3.2.js" defer></script>
+</head>
+<body class="page-install">
+
+    <img src="icone.png" alt="BarcoApp Logo" class="app-logo">
+
+    <span class="version-chip"><i class="fas fa-sparkles"></i> Nova versão 3.2.1</span>
+
+    <h1>BarcoApp</h1>
+    <p>Acompanhe horários, preços e escalas de embarcações em tempo real.</p>
+
+    <div id="install-area" class="install-box">
+        <div style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; margin-bottom: 20px; letter-spacing: 1px;">INSTALAR APLICATIVO</div>
+        
+        <button id="btnInstall" class="btn-install btn-android">
+            <i class="fab fa-android"></i> Instalar Android
+        </button>
+        
+        <button onclick="showIosInstruction()" class="btn-install btn-ios">
+            <i class="fab fa-apple"></i> Instalar iPhone
+        </button>
+    </div>
+
+    <a href="app.html" class="link-web">Acessar Versão Web Agora <i class="fas fa-arrow-right"></i></a>
+
+    <div class="footer">Versão 3.2.1 • Premium</div>
+
+    <script>
+        // REGISTRO DO SERVICE WORKER (Para funcionar offline/instalação)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        let deferredPrompt;
+
+        // Escuta o evento que o navegador dispara quando o app pode ser instalado
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log("Pronto para instalar!");
+        });
+
+        // Lógica do Android
+        document.getElementById('btnInstall').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    deferredPrompt = null;
+                }
+            } else {
+                // Fallback se o navegador não suportar a instalação automática
+                alert("Para instalar:\n1. Toque nos 3 pontinhos do navegador (↗)\n2. Escolha 'Instalar aplicativo' ou 'Adicionar à tela inicial'");
+            }
+        });
+
+        // Lógica do iOS (Alert simples)
+        function showIosInstruction() {
+            alert("No iPhone/iPad:\n\n1. Toque no ícone de Compartilhar (quadrado com seta para cima ⬆)\n2. Role para baixo e toque em 'Adicionar à Tela de Início' (➕)");
+        }
+
+        // Se já estiver rodando como App (Standalone), redireciona direto
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            window.location.href = "app.html";
+        }
+    </script>
+</body>
+</html>

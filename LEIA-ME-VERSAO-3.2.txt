@@ -1,0 +1,53 @@
+BARCOAPP OFICIAL — VERSÃO 3.2.1 PROFISSIONAL
+
+Esta atualização foi desenvolvida diretamente sobre a versão 3.1 Melhorado.
+O Firebase, os caminhos do banco e os módulos originais foram preservados.
+
+PRINCIPAIS CORREÇÕES
+- O contato da embarcação agora aparece claramente nos detalhes da saída.
+- Registros antigos sem telefone tentam buscar o contato atual na Frota Base.
+- Foram reconhecidos campos antigos de contato, como tel1, WhatsApp, telefone e celular.
+- Os botões de WhatsApp agora incluem uma mensagem inicial com os dados da viagem.
+
+NOVO CARD PARA COMPARTILHAMENTO
+- O aplicativo gera uma imagem profissional no formato 1080 x 1350 pixels.
+- O card utiliza foto, nome da embarcação, rota, porto, data, horário, preços e contato.
+- No Android, o menu nativo de compartilhamento permite escolher o WhatsApp.
+- Quando o compartilhamento de arquivos não estiver disponível, o card é baixado e
+  a mensagem da saída é aberta no WhatsApp.
+- O card promove discretamente o BarcoApp.
+
+NOVO PAINEL ADMINISTRATIVO
+- Cabeçalho profissional e indicadores em tempo real.
+- Contagem correta das próximas saídas.
+- Agenda com as cinco próximas viagens.
+- Diagnóstico de embarcações e viagens sem contato ou fotografia.
+- Pesquisa da frota por nome ou telefone.
+- Edição completa de nome, foto e dois contatos da embarcação.
+- Sincronização automática do cadastro editado com viagens já publicadas.
+- Botão para sincronizar toda a Frota Base com as viagens antigas de uma só vez.
+- Filtros de viagens: todas, próximas, encerradas e sem contato.
+- Pesquisa de viagens por barco, origem, destino ou porto.
+- Pesquisa de usuários e acesso rápido ao WhatsApp.
+- Ranking de colaboradores redesenhado.
+- Cópia rápida do texto de uma saída.
+- Exportação de backup completo em JSON.
+- Gestão de alertas e banners com validações mais claras.
+- Área promocional com contador e botão REMOVER sempre visível em cada banner.
+- Confirmação e retorno visual ao adicionar ou remover campanhas.
+
+ARQUIVOS PRINCIPAIS
+- index.html: instalação do PWA e acesso web.
+- app.html: aplicativo dos usuários, contatos e cards.
+- admin.html: painel administrativo profissional.
+- reman.html: área de gestão da embarcação.
+- barcoapp-v3.1.css e barcoapp-v3.1.js: base visual da versão anterior.
+- barcoapp-v3.2.css e barcoapp-v3.2.js: melhorias desta atualização.
+- manifest.json e sw.js: instalação, atualização e funcionamento offline.
+
+PUBLICAÇÃO
+Envie todos os arquivos desta pasta para a hospedagem, sem remover os arquivos
+barcoapp-v3.1.css e barcoapp-v3.1.js. O cache foi alterado para barco-app-v3-2-1,
+permitindo que os celulares recebam a atualização.
+
+Versão preparada: 3.2.1
